@@ -7,7 +7,6 @@ from flask_caching import Cache
 from flask_assets import Environment, Bundle
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from onesignal_sdk.client import Client as OneSignalClient
 from PIL import Image
 from weasyprint import HTML
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -33,10 +32,11 @@ import re
 # Crear la aplicación Flask
 app = Flask(__name__)
 
-# Cargar variables de entorno desde .env
-if not os.path.exists('.env'):
-    raise FileNotFoundError("Archivo .env no encontrado. Asegúrate de crearlo y configurarlo correctamente.")
-load_dotenv()
+# Cargar variables de entorno desde .env si existe (local), pero no fallar si no está
+if os.path.exists('.env'):
+    load_dotenv()
+else:
+    print("Archivo .env no encontrado. Usando variables de entorno del sistema (esperado en producción).")
 
 # Configuración de la sesión permanente
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
@@ -48,7 +48,7 @@ app.config['SESSION_COOKIE_NAME'] = 'voy_session'
 # Configuración de la clave secreta
 app.secret_key = os.getenv('SECRET_KEY')
 if not app.secret_key:
-    raise ValueError("Error: No se encontró SECRET_KEY en las variables de entorno.")
+    raise ValueError("Error: No se encontró SECRET_KEY en las variables de entorno. Configúrala en .env o en el entorno de producción.")
 
 # Configuración de Flask-Login
 login_manager = LoginManager()
@@ -69,14 +69,16 @@ def is_safe_url(target):
 serializer = URLSafeTimedSerializer(app.secret_key)
 
 # Configuración de Google Analytics
-GA_CREDENTIALS_PATH = os.getenv('GA_CREDENTIALS_PATH', os.path.join(app.root_path, 'voy-consciente-analytics.json'))
+GA_CREDENTIALS_JSON = os.getenv('GA_CREDENTIALS_JSON')
+if not GA_CREDENTIALS_JSON:
+    raise ValueError("Error: No se encontró GA_CREDENTIALS_JSON en las variables de entorno.")
+credentials_dict = json.loads(GA_CREDENTIALS_JSON)
+credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+analytics_client = BetaAnalyticsDataClient(credentials=credentials)
 GA_PROPERTY_ID = os.getenv('GA_PROPERTY_ID', '480922494')
 GA_FLOW_ID = os.getenv('GA_FLOW_ID', '10343079148')
 GA_FLOW_NAME = os.getenv('GA_FLOW_NAME', 'Voy Consciente')
 GA_FLOW_URL = os.getenv('GA_FLOW_URL', 'https://192.168.0.213:5001')
-
-credentials = service_account.Credentials.from_service_account_file(GA_CREDENTIALS_PATH)
-analytics_client = BetaAnalyticsDataClient(credentials=credentials)
 
 # Configuración de la API de Grok
 grok_api_key = os.getenv("GROK_API_KEY")
@@ -94,7 +96,7 @@ else:
 stripe.api_key = STRIPE_SECRET_KEY
 
 # Configuración de la base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///Users/sebastianredigonda/Desktop/voy_consciente/basededatos.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///basededatos.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
@@ -111,8 +113,6 @@ class User(UserMixin, db.Model):
     subscription_date = db.Column(db.String(30), nullable=True)
     preferred_categories = db.Column(db.String(200), default='all')
     frequency = db.Column(db.String(20), default='weekly')
-    push_enabled = db.Column(db.Boolean, default=False)
-    onesignal_player_id = db.Column(db.String(50))
     birth_date = db.Column(db.String(30), nullable=True)
 
     def set_password(self, password):
@@ -140,7 +140,7 @@ class Interaction(db.Model):
     session_id = db.Column(db.String(100), nullable=True)
     interaction_date = db.Column(db.Date, nullable=False)
     interaction_count = db.Column(db.Integer, default=0)
-    memory_context = db.Column(db.Text, nullable=True)  # Nueva columna para memoria contextual
+    memory_context = db.Column(db.Text, nullable=True)
 
     @staticmethod
     def get_interaction_count(identifier, is_authenticated):
@@ -156,7 +156,7 @@ class Interaction(db.Model):
                 session_id=identifier if not is_authenticated else None,
                 interaction_date=today,
                 interaction_count=0,
-                memory_context=json.dumps([])  # Inicializar memoria vacía
+                memory_context=json.dumps([])
             )
             db.session.add(interaction)
             db.session.commit()
@@ -181,11 +181,9 @@ class Interaction(db.Model):
             )
         interaction.interaction_count += 1
 
-        # Actualizar memoria contextual
         if user_message and ai_response:
             memory = json.loads(interaction.memory_context or '[]')
             memory.append({"user": user_message, "ai": ai_response, "timestamp": datetime.now().isoformat()})
-            # Limitar memoria a las últimas 10 interacciones para eficiencia
             interaction.memory_context = json.dumps(memory[-10:])
         
         db.session.add(interaction)
@@ -251,14 +249,6 @@ assets.url = '/static'
 assets.directory = os.path.join(app.root_path, 'static')
 css = Bundle('css/style.css', filters='cssmin', output='gen/style.min.css')
 assets.register('css_all', css)
-
-# Configuración de OneSignal
-onesignal_client = OneSignalClient(
-    app_id=os.getenv("ONESIGNAL_APP_ID"),
-    rest_api_key=os.getenv("ONESIGNAL_REST_API_KEY")
-)
-if not onesignal_client.app_id or not onesignal_client.rest_api_key:
-    raise ValueError("Error: Faltan ONESIGNAL_APP_ID o ONESIGNAL_REST_API_KEY en las variables de entorno.")
 
 # Función para interactuar con la API de Grok
 def call_grok_api(messages, max_tokens=80, temperature=0.8):
@@ -365,17 +355,6 @@ def send_weekly_reflection():
             except Exception as e:
                 print(f'Error enviando a {user.email}: {str(e)}')
 
-            if user.push_enabled and user.onesignal_player_id:
-                notification = {
-                    "contents": {"en": f"{reflection.titulo}: {reflection.contenido[:50]}..."},
-                    "include_player_ids": [user.onesignal_player_id]
-                }
-                try:
-                    response = onesignal_client.notification_create(notification)
-                    print(f'Notificación push enviada a {user.email}: {response.body}')
-                except Exception as e:
-                    print(f'Error enviando push a {user.email}: {str(e)}')
-
 # Función para comprimir imágenes
 def compress_image(image_path, output_path, max_width=600, quality=85):
     try:
@@ -389,7 +368,7 @@ def compress_image(image_path, output_path, max_width=600, quality=85):
             img.save(output_path, 'JPEG', quality=quality, optimize=True)
         print(f"Imagen comprimida: {output_path}")
     except Exception as e:
-        print(f" verificError al comprimir imagen: {e}")
+        print(f"Error al comprimir imagen: {e}")
 
 @app.route('/logout')
 @login_required
@@ -397,19 +376,6 @@ def logout():
     logout_user()
     flash('Has cerrado sesión exitosamente.', 'success')
     return redirect(url_for('home'))
-
-@app.route('/update_push', methods=['POST'])
-def update_push():
-    data = request.get_json()
-    email = data.get('email')
-    player_id = data.get('player_id')
-    if email:
-        user = User.query.filter_by(email=email).first()
-        if user:
-            user.onesignal_player_id = player_id
-            db.session.commit()
-            return jsonify({'status': 'success'})
-    return jsonify({'status': 'error'})
 
 @app.route('/terminos-condiciones')
 def terminos_condiciones():
@@ -470,24 +436,6 @@ def serve_main_js():
         print(f"Archivo no encontrado en: {file_path}")
         return "Archivo no encontrado", 404
 
-@app.route('/OneSignalSDK.sw.js')
-def serve_onesignal_sw():
-    file_path = os.path.join(app.static_folder, 'OneSignalSDK.sw.js')
-    if os.path.exists(file_path):
-        return send_from_directory(app.static_folder, 'OneSignalSDK.sw.js', mimetype='application/javascript')
-    else:
-        print(f"Archivo no encontrado en: {file_path}")
-        return "Archivo no encontrado", 404
-
-@app.route('/OneSignalSDKWorker.js')
-def serve_onesignal_worker():
-    file_path = os.path.join(app.static_folder, 'OneSignalSDKWorker.js')
-    if os.path.exists(file_path):
-        return send_from_directory(app.static_folder, 'OneSignalSDKWorker.js', mimetype='application/javascript')
-    else:
-        print(f"Archivo no encontrado en: {file_path}")
-        return "Archivo no encontrado", 404
-
 @app.route('/test-static/<path:filename>')
 def test_static(filename):
     try:
@@ -524,15 +472,6 @@ def reflexiones_por_categoria(categoria, page):
 @app.route('/reflexion/<int:id>')
 def mostrar_reflexion(id):
     reflexion = Reflexion.query.get_or_404(id)
-    notification_body = {
-        "contents": {"en": f"Nueva reflexión visitada: {reflexion.titulo}"},
-        "included_segments": ["Subscribed Users"]
-    }
-    try:
-        response = onesignal_client.notification_create(notification_body)
-        print(f"Notificación enviada: {response.body}")
-    except Exception as e:
-        print(f"Error enviando notificación: {e}")
     return render_template('reflexion.html', reflexion=reflexion)
 
 @app.route('/articulo-aleatorio')
@@ -652,7 +591,6 @@ def register():
             subscription_date=datetime.now().isoformat(),
             preferred_categories='all',
             frequency='weekly',
-            push_enabled=False,
             birth_date=birth_date_iso
         )
         user.set_password(password)
@@ -875,7 +813,7 @@ def mostrar_consciencia():
             messages = [system_message]
             if memory_summary:
                 messages.append({"role": "system", "content": memory_summary})
-            messages.append({"role": "user", "content": message[:100]})  # Limitar entrada para eficiencia
+            messages.append({"role": "user", "content": message[:100]})
 
             # Llamar a la API de Grok
             response_text = call_grok_api(messages, max_tokens=80, temperature=0.8)
@@ -1012,7 +950,7 @@ def migrate_subscriber_to_user():
     with app.app_context():
         if 'subscriber' in inspect(db.engine).get_table_names():
             old_subscribers = db.session.execute(
-                text('SELECT email, subscription_date, preferred_categories, frequency, push_enabled, onesignal_player_id FROM subscriber')
+                text('SELECT email, subscription_date, preferred_categories, frequency FROM subscriber')
             ).fetchall()
             for sub in old_subscribers:
                 user = User.query.filter_by(email=sub[0]).first()
@@ -1020,16 +958,12 @@ def migrate_subscriber_to_user():
                     user.subscription_date = sub[1]
                     user.preferred_categories = sub[2] if sub[2] else 'all'
                     user.frequency = sub[3] if sub[3] else 'weekly'
-                    user.push_enabled = sub[4] if sub[4] is not None else False
-                    user.onesignal_player_id = sub[5]
                 else:
                     user = User(
                         email=sub[0],
                         subscription_date=sub[1],
                         preferred_categories=sub[2] if sub[2] else 'all',
                         frequency=sub[3] if sub[3] else 'weekly',
-                        push_enabled=sub[4] if sub[4] is not None else False,
-                        onesignal_player_id=sub[5],
                         password_hash=generate_password_hash('default_password'),
                         is_active=True
                     )
