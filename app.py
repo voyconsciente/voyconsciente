@@ -96,12 +96,12 @@ else:
 stripe.api_key = STRIPE_SECRET_KEY
 
 # Configuración de la base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///:memory:' if os.getenv('RENDER') else 'sqlite:///basededatos.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Justo después de db = SQLAlchemy(app) y migrate = Migrate(app, db)
+# Asegúrate de que el resto del código permanezca igual
 with app.app_context():
     db.create_all()
 
