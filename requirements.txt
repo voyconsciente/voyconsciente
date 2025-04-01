@@ -20,3 +20,4 @@ google-analytics-data==0.17.1
 google-auth==2.29.0
 gunicorn==22.0.0
 psycopg2-binary
+Flask-Migrate
