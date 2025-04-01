@@ -70,11 +70,14 @@ serializer = URLSafeTimedSerializer(app.secret_key)
 
 # Configuración de Google Analytics
 GA_CREDENTIALS_JSON = os.getenv('GA_CREDENTIALS_JSON')
-if not GA_CREDENTIALS_JSON:
-    raise ValueError("Error: No se encontró GA_CREDENTIALS_JSON en las variables de entorno.")
-credentials_dict = json.loads(GA_CREDENTIALS_JSON)
-credentials = service_account.Credentials.from_service_account_info(credentials_dict)
-analytics_client = BetaAnalyticsDataClient(credentials=credentials)
+if GA_CREDENTIALS_JSON:
+    credentials_dict = json.loads(GA_CREDENTIALS_JSON)
+    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+    analytics_client = BetaAnalyticsDataClient(credentials=credentials)
+else:
+    print("Advertencia: GA_CREDENTIALS_JSON no está definida. Google Analytics no estará disponible.")
+    analytics_client = None
+
 GA_PROPERTY_ID = os.getenv('GA_PROPERTY_ID', '480922494')
 GA_FLOW_ID = os.getenv('GA_FLOW_ID', '10343079148')
 GA_FLOW_NAME = os.getenv('GA_FLOW_NAME', 'Voy Consciente')
