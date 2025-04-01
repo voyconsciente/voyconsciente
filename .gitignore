@@ -26,4 +26,6 @@ migrations/
 
 # Archivos de caché y logs
 *.log
-*.cache
+*.cache.DS_Store
+.DS_Store
+.DS_Store
