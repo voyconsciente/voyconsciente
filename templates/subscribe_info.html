@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Suscripción ConsciencIA Libre - Voy Consciente{% endblock %}
+{% block content %}
+<section class="subscribe-info">
+    <h1>Suscríbete a ConsciencIA Plus</h1>
+    <p>¡Desbloquea todo el potencial de ConsciencIA con una suscripción Plus por solo $5/mes!</p>
+    
+    <h2>Beneficios:</h2>
+    <ul>
+        <li>Interacciones ilimitadas con ConsciencIA cada día.</li>
+        <li>Acceso prioritario a nuevas funciones y actualizaciones.</li>
+        <li>Contenido exclusivo Plus (próximamente).</li>
+        <li>Apoya el desarrollo de Voy Consciente para que siga creciendo.</li>
+    </ul>
+
+    <div class="subscribe-buttons">
+        <a href="{{ url_for('subscribe') }}" class="subscribe-button">Suscribirme Ahora</a>
+        <a href="{{ url_for('mostrar_consciencia') }}" class="cancel-button">Volver a ConsciencIA</a>
+    </div>
+</section>
+
+<style>
+    .subscribe-info {
+        max-width: 800px;
+        margin: 50px auto;
+        padding: 20px;
+        text-align: center;
+        color: #d1d5db;
+        background: #1a1a1a;
+        border-radius: 10px;
+    }
+
+    .subscribe-info h1 {
+        color: #f26666;
+        margin-bottom: 20px;
+    }
+
+    .subscribe-info h2 {
+        color: #ffca28;
+        margin-top: 30px;
+        margin-bottom: 15px;
+    }
+
+    .subscribe-info ul {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 30px;
+    }
+
+    .subscribe-info li {
+        font-size: 18px;
+        margin: 10px 0;
+    }
+
+    .subscribe-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .subscribe-button, .cancel-button {
+        padding: 12px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-family: 'Raleway', sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .subscribe-button {
+        background: linear-gradient(90deg, #f26666, #ff8c8c);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(242, 102, 102, 0.3);
+    }
+
+    .subscribe-button:hover {
+        background: linear-gradient(90deg, #ff8c8c, #f26666);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(242, 102, 102, 0.5);
+    }
+
+    .cancel-button {
+        background: #555;
+        color: #d1d5db;
+    }
+
+    .cancel-button:hover {
+        background: #777;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

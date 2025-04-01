@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Administrar Usuarios - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="admin-users">
+        <div class="admin-users-container" data-aos="fade-up" data-aos-delay="400">
+            <h1 class="section-title">Administrar Usuarios</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% if users %}
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Correo</th>
+                            <th>Administrador</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ 'Sí' if user.is_admin else 'No' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('admin_users') }}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar a {{ user.email }}?');">
+                                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No hay usuarios registrados.</p>
+            {% endif %}
+            <a href="{{ url_for('home') }}" class="btn btn-secondary">Volver al Inicio</a>
+        </div>
+    </section>
+
+    <style>
+        .admin-users-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4CAF50;
+        }
+
+        .flash-message {
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .flash-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .flash-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .users-table th,
+        .users-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .users-table th {
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .users-table tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+
+        .btn-secondary {
+            background-color: #555;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #777;
+        }
+    </style>
+{% endblock %}

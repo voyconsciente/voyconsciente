@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar Sesión - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="contacto login-section" data-aos="fade-up" data-aos-duration="1000">
+        <div class="contacto-form-container" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1000">
+            <h1 class="section-title" data-aos="fade-down" data-aos-delay="300">Iniciar Sesión</h1>
+            <p class="intro" data-aos="fade-up" data-aos-delay="400">Bienvenido de nuevo. Ingresa tus credenciales.</p>
+            <form method="POST" class="contacto-form" data-aos="fade-up" data-aos-delay="500">
+                <!-- Campo oculto para preservar el parámetro 'next' -->
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Tu correo" required class="form-input" value="{{ email|default(request.args.get('email', ''))|default('') }}">
+                    <span class="focus-border"></span>
+                </div>
+                <div class="form-group password-wrapper">
+                    <input type="password" name="password" id="login-password" placeholder="Tu contraseña" required class="form-input" value="{{ password|default(request.args.get('password', ''))|default('') }}">
+                    <button type="button" class="toggle-password" onclick="togglePassword('login-password')" data-aos="fade-left" data-aos-delay="600">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <span class="focus-border"></span>
+                </div>
+                <button type="submit" class="btn" data-aos="zoom-in" data-aos-delay="700">Iniciar Sesión</button>
+                <div class="form-links" data-aos="fade-up" data-aos-delay="800">
+                    <p>¿No tienes cuenta? <a href="{{ url_for('register', next=next) }}" class="link-hover">Regístrate aquí</a></p>
+                    <p><a href="{{ url_for('forgot_password') }}" class="link-hover">¿Olvidaste tu contraseña?</a></p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const toggleBtn = passwordField.nextElementSibling;
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                passwordField.type = "password";
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+    </script>
+
+    <style>
+        .login-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f1e9 0%, #fff9e6 100%);
+            padding: 50px 0;
+        }
+
+        .contacto-form-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.5s ease-out;
+            margin: 0 auto 50px auto;
+        }
+
+        .section-title {
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #f8f1e9;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #ffca28;
+            box-shadow: 0 0 8px rgba(255, 202, 40, 0.3);
+        }
+
+        .focus-border {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #ffca28;
+            transition: 0.3s;
+        }
+
+        .form-input:focus ~ .focus-border,
+        .form-input:valid ~ .focus-border {
+            width: 100%;
+            left: 0;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px auto 15px;
+            display: block;
+        }
+
+        .form-links {
+            margin-top: 10px;
+        }
+
+        .link-hover {
+            color: #f26666;
+            text-decoration: none;
+            transition: color 0.3s ease, background 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .link-hover:hover {
+            color: #ffca28;
+            background: rgba(242, 102, 102, 0.1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        body.dark-mode .login-section {
+            background: linear-gradient(135deg, #000000 0%, #000000 100%);
+        }
+
+        body.dark-mode .contacto-form-container {
+            background: #3a3a3a;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .form-input {
+            background: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .form-input::placeholder {
+            color: #cccccc;
+        }
+
+        body.dark-mode .form-input:focus {
+            border-color: #ffca28;
+            box-shadow: 0 0 8px rgba(255, 202, 40, 0.3);
+        }
+
+        body.dark-mode .toggle-password {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .toggle-password:hover {
+            color: #ffca28;
+        }
+
+        body.dark-mode .link-hover {
+            color: #f26666;
+        }
+
+        body.dark-mode .link-hover:hover {
+            color: #ffca28;
+            background: rgba(255, 202, 40, 0.1);
+        }
+    </style>
+{% endblock %}

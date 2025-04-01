@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}Editor de Diseño - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="design-editor">
+        <h1 class="section-title">Editor de Diseño</h1>
+        <div class="editor-controls">
+            <button id="mobile-preview" class="btn">Vista Móvil</button>
+            <button id="tablet-preview" class="btn">Vista Tablet</button>
+            <button id="desktop-preview" class="btn">Vista Escritorio</button>
+            <button id="save-design" class="btn">Guardar Diseño</button>
+        </div>
+        <div class="preview-container">
+            <iframe id="preview-frame" src="{{ url_for('home') }}"></iframe>
+        </div>
+        <div class="draggable-elements">
+            <div class="draggable" data-element="hero-subtitle">Subtítulo Hero</div>
+            <div class="draggable" data-element="portal-button">Botón Mensaje del Día</div>
+            <div class="draggable" data-element="consciencia-button">Botón ConsciencIA</div>
+        </div>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/interactjs/1.10.11/interact.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const previewFrame = document.getElementById('preview-frame');
+            const mobileBtn = document.getElementById('mobile-preview');
+            const tabletBtn = document.getElementById('tablet-preview');
+            const desktopBtn = document.getElementById('desktop-preview');
+            const saveBtn = document.getElementById('save-design');
+
+            // Cambiar tamaño del iframe para previsualización
+            mobileBtn.addEventListener('click', () => {
+                previewFrame.style.width = '375px';
+                previewFrame.style.height = '667px';
+            });
+
+            tabletBtn.addEventListener('click', () => {
+                previewFrame.style.width = '768px';
+                previewFrame.style.height = '1024px';
+            });
+
+            desktopBtn.addEventListener('click', () => {
+                previewFrame.style.width = '100%';
+                previewFrame.style.height = '100vh';
+            });
+
+            // Drag-and-drop con Interact.js
+            interact('.draggable').draggable({
+                inertia: true,
+                autoScroll: true,
+                listeners: {
+                    move(event) {
+                        const target = event.target;
+                        const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                        const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+
+                        target.style.transform = `translate(${x}px, ${y}px)`;
+                        target.setAttribute('data-x', x);
+                        target.setAttribute('data-y', y);
+
+                        // Actualizar el iframe
+                        const iframeDoc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+                        const element = iframeDoc.querySelector(`.${target.dataset.element}`);
+                        if (element) {
+                            element.style.position = 'absolute';
+                            element.style.left = `${x}px`;
+                            element.style.top = `${y}px`;
+                        }
+                    }
+                }
+            });
+
+            // Guardar diseño
+            saveBtn.addEventListener('click', () => {
+                const layout = {};
+                document.querySelectorAll('.draggable').forEach(el => {
+                    layout[el.dataset.element] = {
+                        x: parseFloat(el.getAttribute('data-x')) || 0,
+                        y: parseFloat(el.getAttribute('data-y')) || 0
+                    };
+                });
+
+                fetch('/design_editor', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ layout })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('Diseño guardado con éxito');
+                    }
+                });
+            });
+
+            // Cargar diseño previo si existe
+            fetch('/static/layout.json')
+                .then(response => response.json())
+                .then(layout => {
+                    Object.keys(layout).forEach(key => {
+                        const el = document.querySelector(`[data-element="${key}"]`);
+                        if (el) {
+                            el.style.transform = `translate(${layout[key].x}px, ${layout[key].y}px)`;
+                            el.setAttribute('data-x', layout[key].x);
+                            el.setAttribute('data-y', layout[key].y);
+                        }
+                    });
+                })
+                .catch(() => console.log('No hay diseño previo'));
+        });
+    </script>
+
+    <style>
+        .design-editor {
+            padding: 120px 60px;
+            text-align: center;
+        }
+
+        .editor-controls {
+            margin-bottom: 20px;
+        }
+
+        .preview-container {
+            border: 2px solid #ddd;
+            overflow: hidden;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+
+        #preview-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .draggable-elements {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .draggable {
+            padding: 10px 20px;
+            background: #ffca28;
+            color: #333;
+            border-radius: 10px;
+            cursor: move;
+            user-select: none;
+            position: relative;
+        }
+    </style>
+{% endblock %}

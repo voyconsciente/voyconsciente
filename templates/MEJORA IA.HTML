@@ -1,0 +1,916 @@
+class MetaCognitionSystem:
+    """Sistema de meta-cognición para permitir que ConciencIA evalúe y mejore sus propias respuestas"""
+    
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.meta_file = f"user_metacognition/{user_id}_metacog.json"
+        
+        # Métricas de auto-evaluación
+        self.evaluation_metrics = {
+            'relevance': [],          # Relevancia de respuestas anteriores
+            'coherence': [],          # Coherencia lógica interna
+            'helpfulness': [],        # Utilidad percibida
+            'depth': [],              # Profundidad conceptual
+            'engagement': [],         # Capacidad de mantener el interés
+            'misunderstandings': [],  # Registro de malentendidos detectados
+        }
+        
+        # Umbrales adaptativos para la auto-mejora
+        self.improvement_thresholds = {
+            'relevance_threshold': 0.7,
+            'coherence_threshold': 0.8,
+            'elaboration_needed': 0.6,
+            'correction_needed': 0.4,
+        }
+        
+        # Patrones de diálogo problemáticos identificados
+        self.dialog_patterns = {
+            'repetitive_responses': 0,
+            'topic_misalignments': 0,
+            'question_avoidance': 0,
+            'excessive_complexity': 0,
+            'excessive_simplicity': 0,
+        }
+        
+        # Cargar datos existentes
+        self.load_metacognition()
+    
+    def load_metacognition(self):
+        """Carga datos de meta-cognición si existen"""
+        try:
+            if os.path.exists(self.meta_file):
+                with open(self.meta_file, 'r') as f:
+                    data = json.load(f)
+                    self.evaluation_metrics = data.get('evaluation_metrics', self.evaluation_metrics)
+                    self.improvement_thresholds = data.get('improvement_thresholds', self.improvement_thresholds)
+                    self.dialog_patterns = data.get('dialog_patterns', self.dialog_patterns)
+        except Exception as e:
+            print(f"Error al cargar meta-cognición: {e}")
+    
+    def save_metacognition(self):
+        """Guarda datos de meta-cognición"""
+        try:
+            os.makedirs("user_metacognition", exist_ok=True)
+            with open(self.meta_file, 'w') as f:
+                json.dump({
+                    'evaluation_metrics': self.evaluation_metrics,
+                    'improvement_thresholds': self.improvement_thresholds,
+                    'dialog_patterns': self.dialog_patterns
+                }, f)
+        except Exception as e:
+            print(f"Error al guardar meta-cognición: {e}")
+    
+    def evaluate_response(self, user_message, ai_response, previous_messages=None):
+        """Evalúa la calidad de la respuesta generada"""
+        if not previous_messages:
+            previous_messages = []
+        
+        # Inicializar puntuaciones
+        scores = {
+            'relevance': 0.0,
+            'coherence': 0.0,
+            'helpfulness': 0.0,
+            'depth': 0.0,
+            'engagement': 0.0
+        }
+        
+        # 1. Evaluar relevancia basada en superposición semántica
+        user_keywords = self._extract_keywords(user_message)
+        response_keywords = self._extract_keywords(ai_response)
+        semantic_overlap = len(set(user_keywords).intersection(set(response_keywords))) / max(1, len(set(user_keywords)))
+        scores['relevance'] = min(1.0, semantic_overlap * 1.5)  # Factor de amplificación
+        
+        # 2. Evaluar coherencia (consistencia interna de la respuesta)
+        contradiction_detected = self._detect_contradictions(ai_response)
+        scores['coherence'] = 0.9 - (0.5 if contradiction_detected else 0.0)
+        
+        # 3. Evaluar profundidad basada en complejidad lingüística y conceptual
+        word_count = len(ai_response.split())
+        unique_words = len(set(ai_response.lower().split()))
+        complexity_ratio = unique_words / max(1, word_count)
+        long_words = len([w for w in ai_response.lower().split() if len(w) > 7])
+        long_word_ratio = long_words / max(1, word_count)
+        
+        # Puntuación de profundidad combinando factores
+        scores['depth'] = min(1.0, (complexity_ratio * 0.5) + (long_word_ratio * 2.0) + (word_count / 200 * 0.3))
+        
+        # 4. Evaluar potencial de engagement
+        question_included = '?' in ai_response
+        contains_example = any(marker in ai_response.lower() for marker in ['por ejemplo', 'ejemplo', 'como cuando', 'imagina'])
+        contains_metaphor = any(marker in ai_response.lower() for marker in ['es como', 'similar a', 'equivale a', 'se asemeja'])
+        
+        engagement_score = 0.5
+        if question_included:
+            engagement_score += 0.2
+        if contains_example:
+            engagement_score += 0.15
+        if contains_metaphor:
+            engagement_score += 0.15
+        scores['engagement'] = min(1.0, engagement_score)
+        
+        # 5. Estimar potencial de ayuda
+        if any(marker in user_message.lower() for marker in ['cómo', 'ayuda', 'explicar', 'entender']):
+            # El usuario buscaba ayuda explícitamente
+            if scores['relevance'] > 0.6 and scores['depth'] > 0.4:
+                scores['helpfulness'] = 0.7 + (scores['relevance'] * 0.3)
+            else:
+                scores['helpfulness'] = 0.4 + (scores['relevance'] * 0.3)
+        else:
+            # Conversación general
+            scores['helpfulness'] = 0.5 + (scores['relevance'] * 0.2) + (scores['engagement'] * 0.3)
+        
+        # 6. Detectar patrones problemáticos
+        self._update_dialog_patterns(user_message, ai_response, previous_messages)
+        
+        # Guardar métricas para seguimiento longitudinal (mantener últimas 20)
+        for metric, value in scores.items():
+            self.evaluation_metrics[metric].append(value)
+            if len(self.evaluation_metrics[metric]) > 20:
+                self.evaluation_metrics[metric] = self.evaluation_metrics[metric][-20:]
+        
+        self.save_metacognition()
+        return scores
+    
+    def generate_self_improvements(self, scores, user_message, ai_response):
+        """Genera ajustes de auto-mejora basados en las puntuaciones de evaluación"""
+        improvements = {
+            'adjusted_temperature': None,
+            'adjusted_max_tokens': None,
+            'suggested_prompt_additions': [],
+            'focus_areas': []
+        }
+        
+        # Evaluar puntajes promedio recientes
+        avg_metrics = {k: sum(v[-5:]) / max(1, len(v[-5:])) for k, v in self.evaluation_metrics.items() if v}
+        
+        # 1. Ajustar temperatura basado en relevancia y coherencia
+        if avg_metrics.get('relevance', 0.7) < self.improvement_thresholds['relevance_threshold']:
+            # Baja relevancia -> reducir temperatura para respuestas más enfocadas
+            improvements['adjusted_temperature'] = 0.65
+            improvements['focus_areas'].append('aumentar_relevancia')
+        elif avg_metrics.get('coherence', 0.8) < self.improvement_thresholds['coherence_threshold']:
+            # Baja coherencia -> reducir temperatura para mayor consistencia
+            improvements['adjusted_temperature'] = 0.6
+            improvements['focus_areas'].append('mejorar_coherencia')
+        
+        # 2. Ajustar longitud basado en profundidad y engagement
+        current_depth = scores.get('depth', 0.5)
+        if current_depth < self.improvement_thresholds['elaboration_needed']:
+            # Poca profundidad -> aumentar tokens para elaborar más
+            improvements['adjusted_max_tokens'] = 200
+            improvements['focus_areas'].append('aumentar_profundidad')
+        
+        # 3. Generar adiciones de instrucción específicas
+        if scores.get('relevance', 0.7) < 0.6:
+            improvements['suggested_prompt_additions'].append(
+                "Asegúrate de abordar directamente los puntos principales mencionados por el usuario."
+            )
+        
+        if self.dialog_patterns['repetitive_responses'] > 2:
+            improvements['suggested_prompt_additions'].append(
+                "Evita repetir frases o estructuras de tus respuestas anteriores. Busca formas nuevas de expresar ideas."
+            )
+            self.dialog_patterns['repetitive_responses'] -= 1  # Reducir contador
+        
+        if self.dialog_patterns['topic_misalignments'] > 2:
+            improvements['suggested_prompt_additions'].append(
+                "Mantente enfocado en el tema principal de la consulta del usuario."
+            )
+            self.dialog_patterns['topic_misalignments'] -= 1
+        
+        # 4. Detectar posibles malentendidos
+        misunderstanding = self._detect_misunderstanding(user_message, ai_response)
+        if misunderstanding:
+            self.evaluation_metrics['misunderstandings'].append({
+                'timestamp': datetime.datetime.now().isoformat(),
+                'pattern': misunderstanding
+            })
+            improvements['suggested_prompt_additions'].append(
+                f"Posible malentendido detectado ({misunderstanding}). Verifica tu comprensión de la consulta."
+            )
+        
+        self.save_metacognition()
+        return improvements
+    
+    def _extract_keywords(self, text):
+        """Extrae palabras clave de un texto"""
+        # Versión simplificada
+        text = text.lower()
+        words = text.split()
+        # Filtrar palabras comunes (stopwords simplificado)
+        stopwords = {'el', 'la', 'los', 'las', 'un', 'una', 'y', 'o', 'de', 'del', 'a', 'en', 'que', 'es', 'por', 'para', 'con', 'su', 'sus'}
+        keywords = [word for word in words if len(word) > 3 and word not in stopwords]
+        return keywords
+    
+    def _detect_contradictions(self, text):
+        """Detecta posibles contradicciones internas en el texto"""
+        # Búsqueda de patrones de contradicción
+        contradiction_patterns = [
+            (r'no .{1,20} pero .{1,20} sí', 'afirmación-negación'),
+            (r'siempre .{1,30} nunca', 'absolutos contradictorios'),
+            (r'es .{1,20} no es', 'afirmación-negación directa')
+        ]
+        
+        for pattern, _ in contradiction_patterns:
+            if re.search(pattern, text.lower()):
+                return True
+        return False
+    
+    def _update_dialog_patterns(self, user_message, ai_response, previous_messages):
+        """Actualiza contadores de patrones de diálogo problemáticos"""
+        # Detectar repeticiones
+        if len(previous_messages) >= 2:
+            last_response = previous_messages[-1]
+            repeated_phrases = self._find_repeated_phrases(last_response, ai_response)
+            if repeated_phrases >= 3:
+                self.dialog_patterns['repetitive_responses'] += 1
+        
+        # Detectar evasión de preguntas
+        if '?' in user_message and '?' not in ai_response:
+            question_words = ['cómo', 'qué', 'cuándo', 'dónde', 'por qué', 'cuál', 'quién']
+            if any(word in user_message.lower() for word in question_words):
+                self.dialog_patterns['question_avoidance'] += 1
+        
+        # Detectar desalineación de temas
+        user_topics = self._extract_keywords(user_message)
+        if previous_messages and len(previous_messages) >= 2:
+            prev_user_message = previous_messages[-2]  # Mensaje anterior del usuario
+            prev_topics = self._extract_keywords(prev_user_message)
+            
+            # Si hay continuidad temática pero la respuesta no refleja esto
+            if len(set(user_topics).intersection(set(prev_topics))) > 2:
+                response_topics = self._extract_keywords(ai_response)
+                if len(set(user_topics).intersection(set(response_topics))) < 2:
+                    self.dialog_patterns['topic_misalignments'] += 1
+    
+    def _find_repeated_phrases(self, text1, text2, min_phrase_length=5):
+        """Encuentra frases repetidas entre dos textos"""
+        words1 = text1.lower().split()
+        words2 = text2.lower().split()
+        
+        repeated_count = 0
+        for i in range(len(words1) - min_phrase_length + 1):
+            phrase = ' '.join(words1[i:i+min_phrase_length])
+            if phrase in ' '.join(words2):
+                repeated_count += 1
+        
+        return repeated_count
+    
+    def _detect_misunderstanding(self, user_message, ai_response):
+        """Detecta posibles malentendidos en la respuesta"""
+        # Patrones de posibles malentendidos
+        misunderstanding_patterns = [
+            # Usuario hace pregunta específica pero la respuesta es general
+            (r'\?.*\bcómo\b|\bqué\b|\bcuál\b|\bcuándo\b', r'', 'respuesta_general_a_pregunta_específica'),
+            
+            # Usuario expresa negativo pero respuesta es positiva
+            (r'\bno\b.*\b(quiero|me gusta|deseo)\b', r'\bperfecto\b|\bexcelente\b|\bgenial\b', 'ignorar_negativa'),
+            
+            # Usuario pide clarificación pero respuesta asume entendimiento
+            (r'\bno entiendo\b|\bclarifica\b|\bexplica mejor\b', r'\bcomo dijiste\b|\bcomo sabes\b', 'asumir_entendimiento')
+        ]
+        
+        for user_pattern, response_pattern, pattern_name in misunderstanding_patterns:
+            if re.search(user_pattern, user_message.lower()):
+
+            
+         
+
+
+
+            class MetaCognitionSystem:
+    """Sistema de meta-cognición para permitir que ConciencIA evalúe y mejore sus propias respuestas"""
+    
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.meta_file = f"user_metacognition/{user_id}_metacog.json"
+        
+        # Métricas de auto-evaluación
+        self.evaluation_metrics = {
+            'relevance': [],          # Relevancia de respuestas anteriores
+            'coherence': [],          # Coherencia lógica interna
+            'helpfulness': [],        # Utilidad percibida
+            'depth': [],              # Profundidad conceptual
+            'engagement': [],         # Capacidad de mantener el interés
+            'misunderstandings': [],  # Registro de malentendidos detectados
+        }
+        
+        # Umbrales adaptativos para la auto-mejora
+        self.improvement_thresholds = {
+            'relevance_threshold': 0.7,
+            'coherence_threshold': 0.8,
+            'elaboration_needed': 0.6,
+            'correction_needed': 0.4,
+        }
+        
+        # Patrones de diálogo problemáticos identificados
+        self.dialog_patterns = {
+            'repetitive_responses': 0,
+            'topic_misalignments': 0,
+            'question_avoidance': 0,
+            'excessive_complexity': 0,
+            'excessive_simplicity': 0,
+        }
+        
+        # Cargar datos existentes
+        self.load_metacognition()
+    
+    def load_metacognition(self):
+        """Carga datos de meta-cognición si existen"""
+        try:
+            if os.path.exists(self.meta_file):
+                with open(self.meta_file, 'r') as f:
+                    data = json.load(f)
+                    self.evaluation_metrics = data.get('evaluation_metrics', self.evaluation_metrics)
+                    self.improvement_thresholds = data.get('improvement_thresholds', self.improvement_thresholds)
+                    self.dialog_patterns = data.get('dialog_patterns', self.dialog_patterns)
+        except Exception as e:
+            print(f"Error al cargar meta-cognición: {e}")
+    
+    def save_metacognition(self):
+        """Guarda datos de meta-cognición"""
+        try:
+            os.makedirs("user_metacognition", exist_ok=True)
+            with open(self.meta_file, 'w') as f:
+                json.dump({
+                    'evaluation_metrics': self.evaluation_metrics,
+                    'improvement_thresholds': self.improvement_thresholds,
+                    'dialog_patterns': self.dialog_patterns
+                }, f)
+        except Exception as e:
+            print(f"Error al guardar meta-cognición: {e}")
+    
+    def evaluate_response(self, user_message, ai_response, previous_messages=None):
+        """Evalúa la calidad de la respuesta generada"""
+        if not previous_messages:
+            previous_messages = []
+        
+        # Inicializar puntuaciones
+        scores = {
+            'relevance': 0.0,
+            'coherence': 0.0,
+            'helpfulness': 0.0,
+            'depth': 0.0,
+            'engagement': 0.0
+        }
+        
+        # 1. Evaluar relevancia basada en superposición semántica
+        user_keywords = self._extract_keywords(user_message)
+        response_keywords = self._extract_keywords(ai_response)
+        semantic_overlap = len(set(user_keywords).intersection(set(response_keywords))) / max(1, len(set(user_keywords)))
+        scores['relevance'] = min(1.0, semantic_overlap * 1.5)  # Factor de amplificación
+        
+        # 2. Evaluar coherencia (consistencia interna de la respuesta)
+        contradiction_detected = self._detect_contradictions(ai_response)
+        scores['coherence'] = 0.9 - (0.5 if contradiction_detected else 0.0)
+        
+        # 3. Evaluar profundidad basada en complejidad lingüística y conceptual
+        word_count = len(ai_response.split())
+        unique_words = len(set(ai_response.lower().split()))
+        complexity_ratio = unique_words / max(1, word_count)
+        long_words = len([w for w in ai_response.lower().split() if len(w) > 7])
+        long_word_ratio = long_words / max(1, word_count)
+        
+        # Puntuación de profundidad combinando factores
+        scores['depth'] = min(1.0, (complexity_ratio * 0.5) + (long_word_ratio * 2.0) + (word_count / 200 * 0.3))
+        
+        # 4. Evaluar potencial de engagement
+        question_included = '?' in ai_response
+        contains_example = any(marker in ai_response.lower() for marker in ['por ejemplo', 'ejemplo', 'como cuando', 'imagina'])
+        contains_metaphor = any(marker in ai_response.lower() for marker in ['es como', 'similar a', 'equivale a', 'se asemeja'])
+        
+        engagement_score = 0.5
+        if question_included:
+            engagement_score += 0.2
+        if contains_example:
+            engagement_score += 0.15
+        if contains_metaphor:
+            engagement_score += 0.15
+        scores['engagement'] = min(1.0, engagement_score)
+        
+        # 5. Estimar potencial de ayuda
+        if any(marker in user_message.lower() for marker in ['cómo', 'ayuda', 'explicar', 'entender']):
+            # El usuario buscaba ayuda explícitamente
+            if scores['relevance'] > 0.6 and scores['depth'] > 0.4:
+                scores['helpfulness'] = 0.7 + (scores['relevance'] * 0.3)
+            else:
+                scores['helpfulness'] = 0.4 + (scores['relevance'] * 0.3)
+        else:
+            # Conversación general
+            scores['helpfulness'] = 0.5 + (scores['relevance'] * 0.2) + (scores['engagement'] * 0.3)
+        
+        # 6. Detectar patrones problemáticos
+        self._update_dialog_patterns(user_message, ai_response, previous_messages)
+        
+        # Guardar métricas para seguimiento longitudinal (mantener últimas 20)
+        for metric, value in scores.items():
+            self.evaluation_metrics[metric].append(value)
+            if len(self.evaluation_metrics[metric]) > 20:
+                self.evaluation_metrics[metric] = self.evaluation_metrics[metric][-20:]
+        
+        self.save_metacognition()
+        return scores
+    
+    def generate_self_improvements(self, scores, user_message, ai_response):
+        """Genera ajustes de auto-mejora basados en las puntuaciones de evaluación"""
+        improvements = {
+            'adjusted_temperature': None,
+            'adjusted_max_tokens': None,
+            'suggested_prompt_additions': [],
+            'focus_areas': []
+        }
+        
+        # Evaluar puntajes promedio recientes
+        avg_metrics = {k: sum(v[-5:]) / max(1, len(v[-5:])) for k, v in self.evaluation_metrics.items() if v}
+        
+        # 1. Ajustar temperatura basado en relevancia y coherencia
+        if avg_metrics.get('relevance', 0.7) < self.improvement_thresholds['relevance_threshold']:
+            # Baja relevancia -> reducir temperatura para respuestas más enfocadas
+            improvements['adjusted_temperature'] = 0.65
+            improvements['focus_areas'].append('aumentar_relevancia')
+        elif avg_metrics.get('coherence', 0.8) < self.improvement_thresholds['coherence_threshold']:
+            # Baja coherencia -> reducir temperatura para mayor consistencia
+            improvements['adjusted_temperature'] = 0.6
+            improvements['focus_areas'].append('mejorar_coherencia')
+        
+        # 2. Ajustar longitud basado en profundidad y engagement
+        current_depth = scores.get('depth', 0.5)
+        if current_depth < self.improvement_thresholds['elaboration_needed']:
+            # Poca profundidad -> aumentar tokens para elaborar más
+            improvements['adjusted_max_tokens'] = 200
+            improvements['focus_areas'].append('aumentar_profundidad')
+        
+        # 3. Generar adiciones de instrucción específicas
+        if scores.get('relevance', 0.7) < 0.6:
+            improvements['suggested_prompt_additions'].append(
+                "Asegúrate de abordar directamente los puntos principales mencionados por el usuario."
+            )
+        
+        if self.dialog_patterns['repetitive_responses'] > 2:
+            improvements['suggested_prompt_additions'].append(
+                "Evita repetir frases o estructuras de tus respuestas anteriores. Busca formas nuevas de expresar ideas."
+            )
+            self.dialog_patterns['repetitive_responses'] -= 1  # Reducir contador
+        
+        if self.dialog_patterns['topic_misalignments'] > 2:
+            improvements['suggested_prompt_additions'].append(
+                "Mantente enfocado en el tema principal de la consulta del usuario."
+            )
+            self.dialog_patterns['topic_misalignments'] -= 1
+        
+        # 4. Detectar posibles malentendidos
+        misunderstanding = self._detect_misunderstanding(user_message, ai_response)
+        if misunderstanding:
+            self.evaluation_metrics['misunderstandings'].append({
+                'timestamp': datetime.datetime.now().isoformat(),
+                'pattern': misunderstanding
+            })
+            improvements['suggested_prompt_additions'].append(
+                f"Posible malentendido detectado ({misunderstanding}). Verifica tu comprensión de la consulta."
+            )
+        
+        self.save_metacognition()
+        return improvements
+    
+    def _extract_keywords(self, text):
+        """Extrae palabras clave de un texto"""
+        # Versión simplificada
+        text = text.lower()
+        words = text.split()
+        # Filtrar palabras comunes (stopwords simplificado)
+        stopwords = {'el', 'la', 'los', 'las', 'un', 'una', 'y', 'o', 'de', 'del', 'a', 'en', 'que', 'es', 'por', 'para', 'con', 'su', 'sus'}
+        keywords = [word for word in words if len(word) > 3 and word not in stopwords]
+        return keywords
+    
+    def _detect_contradictions(self, text):
+        """Detecta posibles contradicciones internas en el texto"""
+        # Búsqueda de patrones de contradicción
+        contradiction_patterns = [
+            (r'no .{1,20} pero .{1,20} sí', 'afirmación-negación'),
+            (r'siempre .{1,30} nunca', 'absolutos contradictorios'),
+            (r'es .{1,20} no es', 'afirmación-negación directa')
+        ]
+        
+        for pattern, _ in contradiction_patterns:
+            if re.search(pattern, text.lower()):
+                return True
+        return False
+    
+    def _update_dialog_patterns(self, user_message, ai_response, previous_messages):
+        """Actualiza contadores de patrones de diálogo problemáticos"""
+        # Detectar repeticiones
+        if len(previous_messages) >= 2:
+            last_response = previous_messages[-1]
+            repeated_phrases = self._find_repeated_phrases(last_response, ai_response)
+            if repeated_phrases >= 3:
+                self.dialog_patterns['repetitive_responses'] += 1
+        
+        # Detectar evasión de preguntas
+        if '?' in user_message and '?' not in ai_response:
+            question_words = ['cómo', 'qué', 'cuándo', 'dónde', 'por qué', 'cuál', 'quién']
+            if any(word in user_message.lower() for word in question_words):
+                self.dialog_patterns['question_avoidance'] += 1
+        
+        # Detectar desalineación de temas
+        user_topics = self._extract_keywords(user_message)
+        if previous_messages and len(previous_messages) >= 2:
+            prev_user_message = previous_messages[-2]  # Mensaje anterior del usuario
+            prev_topics = self._extract_keywords(prev_user_message)
+            
+            # Si hay continuidad temática pero la respuesta no refleja esto
+            if len(set(user_topics).intersection(set(prev_topics))) > 2:
+                response_topics = self._extract_keywords(ai_response)
+                if len(set(user_topics).intersection(set(response_topics))) < 2:
+                    self.dialog_patterns['topic_misalignments'] += 1
+    
+    def _find_repeated_phrases(self, text1, text2, min_phrase_length=5):
+        """Encuentra frases repetidas entre dos textos"""
+        words1 = text1.lower().split()
+        words2 = text2.lower().split()
+        
+        repeated_count = 0
+        for i in range(len(words1) - min_phrase_length + 1):
+            phrase = ' '.join(words1[i:i+min_phrase_length])
+            if phrase in ' '.join(words2):
+                repeated_count += 1
+        
+        return repeated_count
+    
+    def _detect_misunderstanding(self, user_message, ai_response):
+        """Detecta posibles malentendidos en la respuesta"""
+        # Patrones de posibles malentendidos
+        misunderstanding_patterns = [
+            # Usuario hace pregunta específica pero la respuesta es general
+            (r'\?.*\bcómo\b|\bqué\b|\bcuál\b|\bcuándo\b', r'', 'respuesta_general_a_pregunta_específica'),
+            
+            # Usuario expresa negativo pero respuesta es positiva
+            (r'\bno\b.*\b(quiero|me gusta|deseo)\b', r'\bperfecto\b|\bexcelente\b|\bgenial\b', 'ignorar_negativa'),
+            
+            # Usuario pide clarificación pero respuesta asume entendimiento
+            (r'\bno entiendo\b|\bclarifica\b|\bexplica mejor\b', r'\bcomo dijiste\b|\bcomo sabes\b', 'asumir_entendimiento')
+        ]
+        
+        for user_pattern, response_pattern, pattern_name in misunderstanding_patterns:
+            if re.search(user_pattern, user_message.lower()):
+                if not response_pattern or re.search(response_pattern, ai_response.lower()):
+                    return pattern_name
+        
+        return None
+    
+        def update_thresholds(self, user_feedback=None):
+        """Actualiza umbrales basado en patrones y feedback"""
+        # Auto-ajustar umbrales basado en métricas recientes
+        avg_metrics = {k: sum(v[-10:]) / max(1, len(v[-10:])) for k, v in self.evaluation_metrics.items() if v and isinstance(v[0], (int, float))}
+        
+        # Ajustar umbrales de relevancia basado en rendimiento reciente
+        if avg_metrics.get('relevance', 0) > 0:
+            # Si la relevancia promedio es alta, aumentar el umbral para mantener el nivel
+            if avg_metrics['relevance'] > 0.8:
+                self.improvement_thresholds['relevance_threshold'] = min(0.85, self.improvement_thresholds['relevance_threshold'] + 0.02)
+            # Si la relevancia promedio es baja, reducir el umbral para objetivos más realistas
+            elif avg_metrics['relevance'] < 0.6:
+                self.improvement_thresholds['relevance_threshold'] = max(0.5, self.improvement_thresholds['relevance_threshold'] - 0.02)
+        
+        # Ajustar umbral de coherencia
+        if avg_metrics.get('coherence', 0) > 0:
+            if avg_metrics['coherence'] > 0.85:
+                self.improvement_thresholds['coherence_threshold'] = min(0.9, self.improvement_thresholds['coherence_threshold'] + 0.01)
+            elif avg_metrics['coherence'] < 0.7:
+                self.improvement_thresholds['coherence_threshold'] = max(0.6, self.improvement_thresholds['coherence_threshold'] - 0.01)
+        
+        # Ajustar umbral de elaboración basado en profundidad
+        if avg_metrics.get('depth', 0) > 0:
+            if avg_metrics['depth'] > 0.7:
+                self.improvement_thresholds['elaboration_needed'] = min(0.75, self.improvement_thresholds['elaboration_needed'] + 0.02)
+            elif avg_metrics['depth'] < 0.5:
+                self.improvement_thresholds['elaboration_needed'] = max(0.45, self.improvement_thresholds['elaboration_needed'] - 0.02)
+        
+        # Incorporar feedback explícito del usuario si está disponible
+        if user_feedback:
+            feedback_value = user_feedback.get('value', 0)
+            feedback_type = user_feedback.get('type', 'general')
+            
+            # Ajustar umbrales según el tipo de feedback
+            if feedback_type == 'relevance' and feedback_value < 0.5:
+                self.improvement_thresholds['relevance_threshold'] = max(0.5, self.improvement_thresholds['relevance_threshold'] - 0.05)
+            elif feedback_type == 'coherence' and feedback_value < 0.5:
+                self.improvement_thresholds['coherence_threshold'] = max(0.6, self.improvement_thresholds['coherence_threshold'] - 0.05)
+            elif feedback_type == 'depth' and feedback_value < 0.5:
+                self.improvement_thresholds['elaboration_needed'] = max(0.4, self.improvement_thresholds['elaboration_needed'] - 0.05)
+        
+        # Asegurar que se mantengan dentro de rangos razonables
+        self.improvement_thresholds['relevance_threshold'] = max(0.5, min(0.85, self.improvement_thresholds['relevance_threshold']))
+        self.improvement_thresholds['coherence_threshold'] = max(0.6, min(0.9, self.improvement_thresholds['coherence_threshold']))
+        self.improvement_thresholds['elaboration_needed'] = max(0.4, min(0.8, self.improvement_thresholds['elaboration_needed']))
+        
+        self.save_metacognition()
+    
+    def get_performance_summary(self):
+        """Genera un resumen de rendimiento del sistema de metacognición"""
+        avg_metrics = {k: sum(v[-10:]) / max(1, len(v[-10:])) for k, v in self.evaluation_metrics.items() if v and isinstance(v[0], (int, float))}
+        
+        summary = {
+            'average_metrics': avg_metrics,
+            'current_thresholds': self.improvement_thresholds,
+            'dialog_patterns': self.dialog_patterns,
+            'recent_misunderstandings': self.evaluation_metrics.get('misunderstandings', [])[-5:] if self.evaluation_metrics.get('misunderstandings') else []
+        }
+        
+        return summary
+    
+    def reset_dialog_patterns(self):
+        """Reinicia contadores de patrones problemáticos"""
+        for key in self.dialog_patterns:
+            self.dialog_patterns[key] = 0
+        self.save_metacognition()
+
+
+
+
+
+
+
+        def adjust_metrics_weights(self, user_preferences=None):
+        """Ajusta los pesos de las métricas según preferencias del usuario o patrones observados"""
+        # Pesos predeterminados
+        weights = {
+            'relevance': 0.25,
+            'coherence': 0.20,
+            'helpfulness': 0.30,
+            'depth': 0.15,
+            'engagement': 0.10
+        }
+        
+        # Ajustar según preferencias explícitas del usuario
+        if user_preferences:
+            for metric, preference in user_preferences.items():
+                if metric in weights:
+                    # Convertir preferencia en peso (escala 0-1)
+                    weights[metric] = max(0.05, min(0.5, preference / 10 * 0.5))
+            
+            # Normalizar pesos para que sumen 1.0
+            total = sum(weights.values())
+            weights = {k: v/total for k, v in weights.items()}
+        
+        # Ajustar automáticamente basado en patrones de diálogo
+        if self.dialog_patterns['excessive_complexity'] > 3:
+            # Reducir peso de profundidad y aumentar claridad (coherencia)
+            weights['depth'] = max(0.05, weights['depth'] - 0.05)
+            weights['coherence'] = min(0.35, weights['coherence'] + 0.05)
+            self.dialog_patterns['excessive_complexity'] -= 1
+        
+        if self.dialog_patterns['excessive_simplicity'] > 3:
+            # Aumentar peso de profundidad
+            weights['depth'] = min(0.35, weights['depth'] + 0.05)
+            self.dialog_patterns['excessive_simplicity'] -= 1
+        
+        return weights
+    
+    def analyze_user_preferences(self, conversation_history):
+        """Analiza el historial de conversación para inferir preferencias del usuario"""
+        if not conversation_history:
+            return {}
+        
+        preferences = {
+            'prefers_detailed': 0,  # >0 indica preferencia por respuestas detalladas
+            'prefers_examples': 0,   # >0 indica preferencia por ejemplos
+            'prefers_technical': 0,  # >0 indica preferencia por lenguaje técnico
+            'prefers_informal': 0    # >0 indica preferencia por lenguaje informal
+        }
+        
+        # Palabras clave para cada preferencia
+        preference_indicators = {
+            'prefers_detailed': ['detalle', 'explica', 'elabora', 'profundiza', 'más información'],
+            'prefers_examples': ['ejemplo', 'muestra', 'ilustra', 'caso'],
+            'prefers_technical': ['técnico', 'específico', 'preciso', 'académico'],
+            'prefers_informal': ['simple', 'sencillo', 'fácil', 'informal', 'coloquial']
+        }
+        
+        # Analizar mensajes del usuario
+        for message in conversation_history:
+            if 'user' in message:
+                user_text = message['user'].lower()
+                
+                # Buscar indicadores de preferencias
+                for pref, indicators in preference_indicators.items():
+                    if any(indicator in user_text for indicator in indicators):
+                        preferences[pref] += 1
+                
+                # Detectar solicitudes explícitas de brevedad o extensión
+                if any(term in user_text for term in ['breve', 'corto', 'resumen', 'sintetiza']):
+                    preferences['prefers_detailed'] -= 1
+                
+                if any(term in user_text for term in ['detallado', 'extenso', 'largo', 'completo']):
+                    preferences['prefers_detailed'] += 1
+        
+        return preferences
+    
+    def export_learning(self):
+        """Exporta aprendizajes clave para mejora del sistema"""
+        # Recopilar estadísticas y patrones significativos
+        avg_metrics = {k: sum(v[-20:]) / max(1, len(v[-20:])) for k, v in self.evaluation_metrics.items() if v and isinstance(v[0], (int, float))}
+        
+        export_data = {
+            'user_id': self.user_id,
+            'timestamp': datetime.datetime.now().isoformat(),
+            'performance_metrics': avg_metrics,
+            'problematic_patterns': {k: v for k, v in self.dialog_patterns.items() if v > 2},
+            'misunderstandings': self.evaluation_metrics.get('misunderstandings', [])[-10:] if self.evaluation_metrics.get('misunderstandings') else [],
+            'current_thresholds': self.improvement_thresholds
+        }
+        
+        return export_data
+    
+    def aggregate_feedback(self, explicit_feedback):
+        """Agrega feedback explícito del usuario a las métricas"""
+        if not explicit_feedback:
+            return
+        
+        # Mapear feedback cualitativo a valores numéricos
+        feedback_map = {
+            'muy_util': 1.0,
+            'util': 0.8,
+            'neutral': 0.5,
+            'poco_util': 0.3,
+            'no_util': 0.1
+        }
+        
+        # Agregar a métricas específicas según tipo de feedback
+        feedback_type = explicit_feedback.get('type', 'general')
+        feedback_value = feedback_map.get(explicit_feedback.get('value', 'neutral'), 0.5)
+        
+        if feedback_type == 'relevance':
+            self.evaluation_metrics['relevance'].append(feedback_value)
+        elif feedback_type == 'helpfulness':
+            self.evaluation_metrics['helpfulness'].append(feedback_value)
+        elif feedback_type == 'clarity':
+            self.evaluation_metrics['coherence'].append(feedback_value)
+        elif feedback_type == 'depth':
+            self.evaluation_metrics['depth'].append(feedback_value)
+        elif feedback_type == 'engagement':
+            self.evaluation_metrics['engagement'].append(feedback_value)
+        else:
+            # Feedback general se distribuye entre varias métricas
+            for metric in ['relevance', 'coherence', 'helpfulness', 'engagement']:
+                self.evaluation_metrics[metric].append(feedback_value)
+        
+        # Limitar tamaño de las listas
+        for metric in self.evaluation_metrics:
+            if isinstance(self.evaluation_metrics[metric], list) and len(self.evaluation_metrics[metric]) > 30:
+                self.evaluation_metrics[metric] = self.evaluation_metrics[metric][-30:]
+        
+        self.save_metacognition()
+
+
+
+        def adaptive_learning(self, conversation_history, recent_evaluations):
+        """Implementa aprendizaje adaptativo basado en patrones de conversación"""
+        if not conversation_history or not recent_evaluations:
+            return {}
+        
+        # Analizar patrones temporales en las evaluaciones recientes
+        temporal_patterns = {}
+        metrics = ['relevance', 'coherence', 'helpfulness', 'depth', 'engagement']
+        
+        for metric in metrics:
+            # Calcular tendencia (positiva o negativa)
+            if len(recent_evaluations) >= 5 and all(metric in eval_data for eval_data in recent_evaluations):
+                values = [eval_data[metric] for eval_data in recent_evaluations[-5:]]
+                if len(values) >= 3:
+                    # Calcular si hay tendencia ascendente o descendente
+                    diffs = [values[i+1] - values[i] for i in range(len(values)-1)]
+                    avg_diff = sum(diffs) / len(diffs)
+                    temporal_patterns[f'{metric}_trend'] = avg_diff
+        
+        # Aprender de interacciones exitosas
+        success_patterns = []
+        for i, eval_data in enumerate(recent_evaluations):
+            if i > 0 and all(eval_data.get(m, 0) > 0.7 for m in ['relevance', 'helpfulness']):
+                # Identificar patrones en interacciones exitosas
+                msg_idx = min(i, len(conversation_history)-1)
+                if msg_idx >= 0 and 'ai' in conversation_history[msg_idx]:
+                    success_response = conversation_history[msg_idx]['ai']
+                    # Extraer características estructurales del mensaje exitoso
+                    has_examples = any(marker in success_response.lower() for marker in ['por ejemplo', 'ejemplo', 'como'])
+                    has_structure = any(marker in success_response for marker in [':', '-', '•', '*', '1.', '2.'])
+                    response_length = len(success_response.split())
+                    
+                    success_patterns.append({
+                        'has_examples': has_examples,
+                        'has_structure': has_structure,
+                        'response_length': response_length
+                    })
+        
+        # Consolidar patrones de éxito
+        consolidated_patterns = {}
+        if success_patterns:
+            consolidated_patterns['use_examples'] = sum(1 for p in success_patterns if p['has_examples']) / len(success_patterns) > 0.6
+            consolidated_patterns['use_structure'] = sum(1 for p in success_patterns if p['has_structure']) / len(success_patterns) > 0.6
+            consolidated_patterns['avg_length'] = sum(p['response_length'] for p in success_patterns) / len(success_patterns)
+        
+        # Ajustar umbrales basados en patrones de éxito
+        adaptive_adjustments = {}
+        if consolidated_patterns.get('use_examples', False):
+            adaptive_adjustments['encourage_examples'] = True
+        if consolidated_patterns.get('use_structure', False):
+            adaptive_adjustments['encourage_structure'] = True
+        if 'avg_length' in consolidated_patterns:
+            adaptive_adjustments['target_length'] = consolidated_patterns['avg_length']
+        
+        # Integrar patrones temporales
+        for metric, trend in temporal_patterns.items():
+            if abs(trend) > 0.05:  # Umbral para considerar una tendencia significativa
+                if trend < 0:
+                    adaptive_adjustments[f'focus_on_{metric.split("_")[0]}'] = True
+        
+        return adaptive_adjustments
+    
+    def detect_cognitive_biases(self, user_message, ai_response):
+        """Detecta posibles sesgos cognitivos en la interacción"""
+        biases = []
+        
+        # Patrones de sesgo comunes
+        bias_patterns = [
+            # Sesgo de confirmación
+            (r'(siempre|nunca|todos|ninguno)', 'absolutista', 'confirmation_bias'),
+            
+            # Falacia de autoridad
+            (r'(como (experto|autoridad)|según todas las autoridades)', 'autoridad', 'authority_bias'),
+            
+            # Generalización excesiva
+            (r'(todos|siempre|nunca|nadie)', 'generalización', 'overgeneralization'),
+            
+            # Sesgo de disponibilidad
+            (r'(casos conocidos|ejemplos famosos)', 'disponibilidad', 'availability_bias')
+        ]
+        
+        # Analizar respuesta del AI
+        for pattern, context, bias_type in bias_patterns:
+            if re.search(pattern, ai_response.lower()):
+                biases.append({
+                    'type': bias_type,
+                    'context': context,
+                    'severity': 'medium'  # Podría refinarse con más análisis
+                })
+        
+        # Análisis de polarización
+        polarity_words = {
+            'positive': ['excelente', 'perfecto', 'maravilloso', 'increíble', 'fantástico'],
+            'negative': ['terrible', 'horrible', 'pésimo', 'catastrófico', 'desastroso']
+        }
+        
+        positive_count = sum(1 for word in polarity_words['positive'] if word in ai_response.lower())
+        negative_count = sum(1 for word in polarity_words['negative'] if word in ai_response.lower())
+        
+        if positive_count > 3 and positive_count > negative_count * 3:
+            biases.append({
+                'type': 'positivity_bias',
+                'context': 'exceso de positividad',
+                'severity': 'medium'
+            })
+        elif negative_count > 3 and negative_count > positive_count * 3:
+            biases.append({
+                'type': 'negativity_bias',
+                'context': 'exceso de negatividad',
+                'severity': 'medium'
+            })
+        
+        return biases
+    
+    def generate_metacognitive_report(self):
+        """Genera un informe de metacognición para retroalimentación"""
+        avg_metrics = {k: sum(v[-10:]) / max(1, len(v[-10:])) for k, v in self.evaluation_metrics.items() if v and isinstance(v[0], (int, float))}
+        
+        report = {
+            'timestamp': datetime.datetime.now().isoformat(),
+            'average_metrics': avg_metrics,
+            'thresholds': self.improvement_thresholds,
+            'dialog_patterns': self.dialog_patterns,
+            'performance_summary': {
+                'strengths': [],
+                'areas_for_improvement': [],
+                'recommendations': []
+            }
+        }
+        
+        # Identificar fortalezas
+        for metric, value in avg_metrics.items():
+            if value > 0.8:
+                report['performance_summary']['strengths'].append(f'Alto nivel de {metric}')
+        
+        # Identificar áreas de mejora
+        for metric, value in avg_metrics.items():
+            if value < 0.6:
+                report['performance_summary']['areas_for_improvement'].append(f'Mejorar {metric}')
+        
+        # Generar recomendaciones
+        for pattern, count in self.dialog_patterns.items():
+            if count > 2:
+                if pattern == 'repetitive_responses':
+                    report['performance_summary']['recommendations'].append('Aumentar variedad en respuestas')
+                elif pattern == 'topic_misalignments':
+                    report['performance_summary']['recommendations'].append('Mejorar alineación temática')
+                elif pattern == 'question_avoidance':
+                    report['performance_summary']['recommendations'].append('Responder directamente a preguntas')
+        
+        return report

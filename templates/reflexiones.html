@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}Reflexiones - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="reflexiones">
+        <h1 class="section-title" data-aos="fade-down">Reflexiones</h1>
+        <p class="intro" data-aos="fade-down" data-aos-delay="200">
+            {% if categoria %}
+                Explora nuestras reflexiones en la categoría "{{ categoria | capitalize }}".
+            {% else %}
+                Descubre todas nuestras reflexiones para inspirarte.
+            {% endif %}
+        </p>
+        <div class="reflexiones-blog">
+            {% for reflexion in reflexiones %}
+                <article class="blog-post" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 100 }}">
+                    {% if reflexion.imagen %}
+                        <img class="lazyload blog-cover" data-src="{{ reflexion.imagen }}" alt="{{ reflexion.titulo }}">
+                    {% endif %}
+                    <div class="blog-content">
+                        <h2><a href="{{ url_for('mostrar_reflexion', id=reflexion.id) }}">{{ reflexion.titulo }}</a></h2>
+                        <p class="categoria">{{ reflexion.categoria | capitalize }}</p>
+                        <div class="blog-text">
+                            {{ reflexion.contenido | striptags | truncate(200, end='...') | safe }}
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+            {% if not reflexiones %}
+                <p class="no-resultados">No hay reflexiones disponibles en esta categoría.</p>
+            {% endif %}
+        </div>
+
+        <!-- Paginación -->
+        {% if pagination.pages > 1 %}
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('mostrar_reflexiones' if not categoria else 'reflexiones_por_categoria', categoria=categoria, page=pagination.prev_num) }}">Anterior</a>
+                {% endif %}
+                {% for p in pagination.iter_pages(left_edge=2, left_current=2, right_current=5, right_edge=2) %}
+                    {% if p %}
+                        <a href="{{ url_for('mostrar_reflexiones' if not categoria else 'reflexiones_por_categoria', categoria=categoria, page=p) }}" {% if p == pagination.page %}class="active"{% endif %}>{{ p }}</a>
+                    {% else %}
+                        <span>...</span>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('mostrar_reflexiones' if not categoria else 'reflexiones_por_categoria', categoria=categoria, page=pagination.next_num) }}">Siguiente</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 600px; margin: 20px auto; padding: 20px;">
+    <h1>Suscríbete a Voy Consciente</h1>
+    <form method="POST" action="{{ url_for('suscribirse') }}">
+        <label>Correo Electrónico:</label>
+        <input type="email" name="email" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
+        
+        <label>Categorías de Interés:</label><br>
+        {% for category in categories %}
+            <input type="checkbox" name="categories" value="{{ category }}">
+            <label>{{ category.capitalize() }}</label><br>
+        {% endfor %}
+        
+        <label>Frecuencia:</label><br>
+        <select name="frequency" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+            <option value="daily">Diario</option>
+            <option value="weekly" selected>Semanal</option>
+            <option value="monthly">Mensual</option>
+        </select>
+        
+        <label><input type="checkbox" name="push_enabled"> Activar notificaciones push</label><br>
+        
+        <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px; width: 100%;">Suscribirme</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p class="{% if 'error' in message.lower() %}text-error{% else %}text-success{% endif %}">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Favoritos - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="reflexiones">
+        <h1 class="section-title" data-aos="fade-down">Mis Favoritos</h1>
+        <div class="reflexiones-blog">
+            {% for reflexion in favoritos %}
+                <article class="blog-post" data-aos="fade-up">
+                    {% if reflexion.imagen %}
+                        <img src="{{ reflexion.imagen }}" alt="{{ reflexion.titulo }}" class="blog-cover">
+                    {% endif %}
+                    <div class="blog-content">
+                        <h2><a href="{{ url_for('mostrar_reflexion', id=reflexion.id) }}">{{ reflexion.titulo }}</a></h2>
+                        <p class="categoria">{{ reflexion.categoria | capitalize }}</p>
+                    </div>
+                </article>
+            {% endfor %}
+            {% if not favoritos %}
+                <p class="no-resultados">No tienes reflexiones favoritas aún.</p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

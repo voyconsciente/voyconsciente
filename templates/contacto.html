@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Contacto - Voy Consciente{% endblock %}
+{% block content %}
+<section class="contacto">
+    <h1 class="section-title" data-aos="fade-up">Contacto</h1>
+    <p class="intro" data-aos="fade-up" data-aos-delay="200">Estamos aquí para ti.</p>
+    <div class="contacto-form-container" data-aos="fade-up" data-aos-delay="400">
+        <form method="POST" class="contacto-form">
+            <input type="text" name="nombre" placeholder="Tu nombre" required>
+            <input type="email" name="email" placeholder="Tu correo" required>
+            <textarea name="mensaje" placeholder="Tu mensaje" required></textarea>
+            <button type="submit" class="btn">Enviar</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

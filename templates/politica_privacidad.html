@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Política de Privacidad - Voy Consciente{% endblock %}
+{% block content %}
+<section class="privacy-policy">
+    <!-- Título Principal -->
+    <div class="policy-header" data-aos="fade-down">
+        <h1 class="section-title">Política de Privacidad</h1>
+    </div>
+
+    <!-- Contenido -->
+    <div class="policy-content" data-aos="fade-up" data-aos-delay="200">
+        <div class="policy-section">
+            <h2 class="policy-subtitle">Tu Privacidad Nos Importa</h2>
+            <p class="policy-text">
+                En <strong>Voy Consciente</strong>, valoramos tu privacidad y nos comprometemos a proteger tus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos y protegemos tu información cuando visitas nuestro sitio web.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">1. Información que Recopilamos</h3>
+            <p class="policy-text">Podemos recopilar:</p>
+            <ul class="policy-list">
+                <li>Datos personales como nombre y correo electrónico cuando te registras o usas nuestro formulario de contacto.</li>
+                <li>Información de navegación (cookies, dirección IP, tipo de dispositivo) para mejorar tu experiencia.</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">2. Cómo Usamos tu Información</h3>
+            <p class="policy-text">Utilizamos tus datos para:</p>
+            <ul class="policy-list">
+                <li>Personalizar tu experiencia en el sitio (por ejemplo, guardar favoritos).</li>
+                <li>Enviarte notificaciones push o correos electrónicos si optas por recibirlos.</li>
+                <li>Analizar el uso del sitio mediante herramientas como Google Analytics.</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">3. Compartir tu Información</h3>
+            <p class="policy-text">No vendemos ni compartimos tus datos personales con terceros, salvo:</p>
+            <ul class="policy-list">
+                <li>Proveedores de servicios (como OneSignal para notificaciones) que nos ayudan a operar el sitio.</li>
+                <li>Cuando sea requerido por ley.</li>
+            </ul>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">4. Cookies y Tecnologías Similares</h3>
+            <p class="policy-text">
+                Usamos cookies para mejorar la funcionalidad y analizar el tráfico. Puedes gestionar tus preferencias de cookies en tu navegador. Al continuar usando el sitio, aceptas nuestro uso de cookies esenciales.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">5. Seguridad de tus Datos</h3>
+            <p class="policy-text">
+                Implementamos medidas de seguridad (como cifrado SSL) para proteger tu información.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">6. Tus Derechos</h3>
+            <p class="policy-text">
+                Puedes solicitar acceso, corrección o eliminación de tus datos personales contactándonos en <a href="{{ url_for('contacto') }}" class="policy-link">nuestra página de contacto</a>.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">7. Cambios en esta Política</h3>
+            <p class="policy-text">
+                Podemos actualizar esta política ocasionalmente. Los cambios se publicarán aquí, y te notificaremos si son significativos.
+            </p>
+        </div>
+
+        <div class="policy-footer">
+            <p class="policy-text policy-date">Última actualización: {{ año_actual | default('2025') }}</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

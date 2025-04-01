@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Términos y Condiciones - Voy Consciente{% endblock %}
+{% block content %}
+<section class="terms-conditions">
+    <!-- Título Principal -->
+    <div class="policy-header" data-aos="fade-down">
+        <h1 class="section-title">Términos y Condiciones</h1>
+    </div>
+
+    <!-- Contenido -->
+    <div class="policy-content" data-aos="fade-up" data-aos-delay="200">
+        <div class="policy-section">
+            <h2 class="policy-subtitle">Bienvenido(a) a Voy Consciente</h2>
+            <p class="policy-text">
+                Estos Términos y Condiciones regulan el uso del sitio web <strong>Voy Consciente</strong>, accesible en <a href="{{ url_for('home') }}" class="policy-link">voyconsciente.com</a>. Al acceder y utilizar este sitio, aceptas cumplir con estos términos. Si no estás de acuerdo, te pedimos que no continúes usando nuestros servicios.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">1. Uso del Sitio</h3>
+            <p class="policy-text">
+                Voy Consciente ofrece contenido como reflexiones, recursos y herramientas para fomentar la consciencia personal y el bienestar. El contenido está destinado a uso personal y no comercial. No está permitido reproducir, distribuir ni modificar el contenido sin nuestro consentimiento expreso.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">2. Registro y Cuenta</h3>
+            <p class="policy-text">
+                Algunas funciones, como guardar favoritos, requieren que crees una cuenta. Eres responsable de mantener la confidencialidad de tu contraseña y de todas las actividades que ocurran bajo tu cuenta. Nos reservamos el derecho de suspender o cancelar cuentas que violen estos términos.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">3. Propiedad Intelectual</h3>
+            <p class="policy-text">
+                Todo el contenido publicado en Voy Consciente (textos, imágenes, videos, etc.) es propiedad de Voy Consciente o de sus respectivos autores y está protegido por leyes de derechos de autor. Puedes compartir nuestro contenido en redes sociales siempre que nos des crédito y no lo alteres.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">4. Limitación de Responsabilidad</h3>
+            <p class="policy-text">
+                El contenido de Voy Consciente se proporciona "tal cual" y no garantizamos que sea adecuado para todos los propósitos. No nos hacemos responsables por daños derivados del uso o la imposibilidad de uso del sitio.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">5. Cambios en los Términos</h3>
+            <p class="policy-text">
+                Podemos actualizar estos términos en cualquier momento. Te notificaremos de cambios significativos a través del sitio o por correo electrónico si estás registrado. El uso continuo del sitio tras los cambios implica tu aceptación de los nuevos términos.
+            </p>
+        </div>
+
+        <div class="policy-section">
+            <h3 class="policy-subheading">6. Contacto</h3>
+            <p class="policy-text">
+                Si tienes preguntas sobre estos términos, contáctanos en <a href="{{ url_for('contacto') }}" class="policy-link">nuestra página de contacto</a>.
+            </p>
+        </div>
+
+        <div class="policy-footer">
+            <p class="policy-text policy-date">Última actualización: {{ año_actual | default('2025') }}</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

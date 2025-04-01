@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Análisis con Google Analytics - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="analisis">
+        <h1 class="section-title" data-aos="fade-down">Análisis con Google Analytics (métricas)</h1>
+        <p class="intro" data-aos="fade-down" data-aos-delay="200">
+            Aquí te mostramos cómo interactúas con nuestro sitio a través de métricas clave obtenidas con Google Analytics.
+        </p>
+        
+        <!-- Información del Flujo de Analytics -->
+        <div class="flow-info" data-aos="fade-down" data-aos-delay="300">
+            <p><strong>Nombre del Flujo:</strong> {{ flow_name }}</p>
+            <p><strong>URL del Flujo:</strong> {{ flow_url }}</p>
+            <p><strong>ID del Flujo:</strong> {{ flow_id }}</p>
+            <p><strong>ID de Medición:</strong> G-MJZ61W0JX5</p>
+        </div>
+        
+        <div class="metrics-container" data-aos="fade-up" data-aos-delay="400">
+            {% if metrics %}
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuarios Activos</th>
+                            <th>Sesiones</th>
+                            <th>Duración Promedio (min)</th>
+                            <th>Vistas de Página</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in metrics %}
+                            <tr>
+                                <td>{{ entry.date }}</td>
+                                <td>{{ entry.active_users }}</td>
+                                <td>{{ entry.sessions }}</td>
+                                <td>{{ entry.avg_session_duration | round(2) }}</td>
+                                <td>{{ entry.page_views }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No hay datos disponibles actualmente.</p>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends 'base-chat.html' %}
+{% block title %}ConsciencIA - Conversación{% endblock %}
+{% block content %}
+<div class="chat-container consciencia-page" style="background: #1a1a1a !important;">
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='img/logo consciencia.png') }}" alt="Logo" class="logo">
+    </div>
+    <div class="chat-messages" id="chat-messages">
+        <div class="messages-container">
+            <div class="welcome-text" id="chat-welcome">
+                <p>¡Hola! ¿Cómo puedo ayudarte hoy?</p>
+            </div>
+            <!-- Los mensajes se añadirán aquí dinámicamente -->
+        </div>
+    </div>
+    <div class="chat-input-area" id="chat-input-area">
+        <form id="chat-form" class="input-wrapper">
+            <input type="text" id="user-input" placeholder="Escribe tu mensaje..." required>
+            <button type="submit" aria-label="Enviar" class="send-button">
+                <i class="send-icon">➤</i>
+            </button>
+        </form>
+    </div>
+</div>
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const chatMessages = document.getElementById('chat-messages');
+    const messagesContainer = document.querySelector('.messages-container');
+    const userInput = document.getElementById('user-input');
+    const chatWelcome = document.getElementById('chat-welcome');
+    
+    // Enviar mensaje
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+        addMessage('Tú', message, 'user-message');
+        userInput.value = '';
+        chatWelcome.style.display = 'none';
+        
+        try {
+            const response = await fetch('/consciencia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+            const data = await response.json();
+            addMessage('ConsciencIA', data.response, 'ai-message');
+        } catch (error) {
+            console.error('Error:', error);
+            addMessage('ConsciencIA', 'Ups, algo salió mal. ¿Intentamos de nuevo?', 'ai-message');
+        }
+    });
+    
+    function addMessage(sender, text, className) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${className}`;
+        messageDiv.innerHTML = `<div class="message-content">${text}</div>`;
+        messageDiv.classList.add('fade-in');
+        messagesContainer.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+</script>
+<style>
+    /* Estilos para sobrescribir los de base-chat.html con mayor especificidad */
+    body.chat-body,
+    body {
+        padding-top: 0 !important;
+        margin: 0 !important;
+        background: #1a1a1a !important; /* Fondo oscuro #1a1a1a, como Grok/ChatGPT */
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Contenedor principal del chat con clase específica para sobrescribir */
+    .consciencia-page {
+        background: #1a1a1a !important; /* Fondo oscuro consistente */
+        min-height: 0 !important;
+        width: 100%;
+        height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    .chat-container {
+        background: none !important;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }
+
+    /* Logo en la posición original */
+    .logo-container {
+        position: absolute !important;
+        top: 25px !important;
+        left: 75px !important;
+        z-index: 10;
+    }
+
+    .logo {
+        width: 150px !important;
+        height: auto !important;
+        max-height: 100px !important;
+        object-fit: contain !important;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+
+    .logo:hover {
+        opacity: 1;
+    }
+
+    /* Área de mensajes */
+    .chat-messages {
+        flex-grow: 1;
+        width: 100%;
+        height: auto !important;
+        padding: 50px 20px 80px !important;
+        margin-bottom: 0 !important;
+        margin-top: 0 !important;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .messages-container {
+        max-width: 750px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 0 15px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .welcome-text {
+        color: #d1d5db;
+        font-size: 24px;
+        font-weight: 600;
+        animation: fadeIn 0.5s ease-in-out;
+        text-align: center;
+        margin-top: 10vh;
+    }
+
+    .message {
+        max-width: 85%;
+        animation: slideIn 0.3s ease-out;
+        margin-bottom: 20px;
+    }
+
+    .user-message {
+        background: #444; /* Fondo del recuadro del usuario */
+        color: #d1d5db;
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-left: auto;
+        align-self: flex-end;
+    }
+
+    .ai-message {
+        background: none;
+        color: #d1d5db;
+        padding: 12px 18px;
+        border-radius: 0;
+        align-self: flex-start;
+    }
+
+    .message-content {
+        line-height: 1.6;
+        width: 100%;
+        text-align: left;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Área del input */
+    .chat-input-area {
+        padding: 10px 20px !important;
+        background: none !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        z-index: 100;
+    }
+
+    .input-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        max-width: 750px;
+        width: 100%;
+        background: #444; /* Igual al fondo de .user-message */
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        padding: 5px 10px;
+    }
+
+    #user-input {
+        flex-grow: 1;
+        padding: 10px 40px 10px 15px;
+        border: none;
+        border-radius: 8px;
+        background: #444; /* Igual al fondo de .user-message */
+        color: #d1d5db;
+        font-size: 18px;
+        outline: none;
+        transition: background 0.3s ease;
+        min-height: 50px;
+        resize: none;
+    }
+
+    #user-input:focus {
+        background: #555; /* Ligero cambio al enfocar para indicar interacción */
+    }
+
+    .send-button {
+        position: absolute;
+        right: 10px;
+        background: #f26666;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .send-button:hover {
+        background: #ffca28;
+        transform: scale(1.1);
+    }
+
+    .send-icon {
+        font-size: 14px;
+        line-height: 1;
+    }
+</style>
+{% endblock %}

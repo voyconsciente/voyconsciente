@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor de Reflexiones</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .tabs {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .tab-list {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-list li {
+            padding: 10px 20px;
+            background: #f26666;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .tab-list li:hover {
+            background: #ffca28;
+            color: #333;
+        }
+        .tab-list li.active {
+            background: #ffca28;
+            color: #333;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="tabs">
+        <h1>Editor de Reflexiones</h1>
+        <ul class="tab-list">
+            {% for reflexion in reflexiones %}
+                <li><a href="{{ url_for('editar_reflexion', id=reflexion.id) }}">ID {{ reflexion.id }} - {{ reflexion.titulo }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

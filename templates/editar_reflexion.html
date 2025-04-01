@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <title>Editar Reflexión {{ reflexion.id }}</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+        <!-- Cargar TinyMCE con tu clave API -->
+        <script src="https://cdn.tiny.cloud/1/ygd6rf48juvp9zfvjxqsc2400zdqz330plolahhbp9pligt9/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+        <script>
+            tinymce.init({
+                selector: '#contenido',
+                plugins: 'advlist autolink lists link image charmap print preview anchor',
+                toolbar: 'undo redo | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link image',
+                height: 400,
+                menubar: false,
+                content_style: 'body { font-family: Inter, sans-serif; font-size: 18px; }',
+                setup: function (editor) {
+                    editor.on('init', function () {
+                        console.log('TinyMCE inicializado correctamente');
+                    });
+                    editor.on('change', function () {
+                        editor.save();
+                        console.log('Contenido actualizado:', editor.getContent());
+                    });
+                }
+            });
+        </script>
+        <style>
+            .editor-container {
+                max-width: 900px;
+                margin: 20px auto;
+                padding: 20px;
+                background: #fff;
+                border-radius: 10px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            }
+            .editor-container label {
+                display: block;
+                margin: 10px 0 5px;
+                font-weight: 600;
+                color: #f26666;
+            }
+            .editor-container input, .editor-container textarea {
+                width: 100%;
+                padding: 10px;
+                margin-bottom: 15px;
+                border: 2px solid #ddd;
+                border-radius: 5px;
+                font-size: 16px;
+            }
+            .editor-container button {
+                background: #f26666;
+                color: #fff;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: background 0.3s ease;
+            }
+            .editor-container button:hover {
+                background: #ffca28;
+                color: #333;
+            }
+        </style>
+    </head>
+<body>
+    <div class="editor-container">
+        <h1>Editar Reflexión ID {{ reflexion.id }}</h1>
+        <form method="POST">
+            <label for="titulo">Título:</label>
+            <input type="text" id="titulo" name="titulo" value="{{ reflexion.titulo }}" required>
+            
+            <label for="contenido">Contenido:</label>
+            <textarea id="contenido" name="contenido">{{ reflexion.contenido }}</textarea>
+            
+            <label for="categoria">Categoría:</label>
+            <input type="text" id="categoria" name="categoria" value="{{ reflexion.categoria }}">
+            
+            <label for="imagen">URL de la Imagen:</label>
+            <input type="text" id="imagen" name="imagen" value="{{ reflexion.imagen }}">
+            
+            <label for="fecha">Fecha:</label>
+            <input type="text" id="fecha" name="fecha" value="{{ reflexion.fecha }}">
+            
+            <button type="submit">Guardar Cambios</button>
+            <a href="{{ url_for('editor') }}" class="btn">Volver</a>
+        </form>
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

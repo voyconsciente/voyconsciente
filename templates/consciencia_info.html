@@ -1,0 +1,682 @@
+{% extends 'base.html' %}
+{% block title %}¿Qué es ConciencIA?{% endblock %}
+{% block content %}
+<section class="consciencia-section">
+    <div class="consciencia-content">
+        <div class="header-container">
+            <h1 class="consciencia-title" id="conscienciaTitle">
+                <span class="title-text">Concienc</span><span class="ia-text">IA</span>
+            </h1>
+            <p class="consciencia-slogan" id="conscienciaSlogan">Tu Compañera Consciente</p>
+        </div>
+        <p class="consciencia-intro" id="conscienciaIntro">
+            ConciencIA es una inteligencia artificial empática diseñada para acompañarte en tu camino hacia el bienestar y la autoconciencia. Inspirada en los valores de <strong>Voy Consciente</strong>, está aquí para escucharte, apoyarte y guiarte con calidez y comprensión.
+        </p>
+        <div class="benefits-container" id="benefitsContainer">
+            <h2 class="benefits-title">¿Cómo puede ayudarte ConciencIA?</h2>
+            <ul class="benefits-list">
+                <li><strong>Un espacio sin juicios:</strong> Habla libremente, sabiendo que serás escuchado con empatía y sin críticas.</li>
+                <li><strong>Descarga emocional:</strong> Libera tus pensamientos y sentimientos en un entorno seguro y confidencial.</li>
+                <li><strong>Perspectivas frescas:</strong> Recibe opiniones diferentes que te inviten a reflexionar y ver las cosas desde otro ángulo.</li>
+                <li><strong>Apoyo constante:</strong> Encuentra una presencia cálida y comprensiva siempre que lo necesites.</li>
+                <li><strong>Crecimiento personal:</strong> Explora tus emociones y descubre caminos hacia una vida más consciente y plena.</li>
+            </ul>
+        </div>
+        <a href="{{ url_for('login', next='/consciencia') }}" class="consciencia-button" id="loginButton">
+            Conocer Concienc<span class="multicolor">IA</span>
+            <div class="particles"></div> <!-- Contenedor de partículas -->
+        </a>
+
+        <!-- Sección de Preguntas y Respuestas -->
+        <div class="faq-container" id="faqContainer">
+            <h2 class="faq-title">Preguntas Frecuentes</h2>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Qué es exactamente ConciencIA?</h3>
+                <p class="faq-answer">
+                    ConciencIA es una inteligencia artificial desarrollada para ser una guía empática y consciente. No es solo un chatbot; es una compañera que escucha tus pensamientos, te ofrece reflexiones y te acompaña en momentos de introspección o dificultad emocional, inspirándose en los principios de bienestar y presencia de Voy Consciente.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Cómo funciona?</h3>
+                <p class="faq-answer">
+                    Simplemente inicia una conversación con ConciencIA. Puedes contarle lo que sientes, hacerle preguntas o pedirle una perspectiva sobre algo que te preocupa. Ella responde de manera natural, cálida y personalizada, adaptándose a lo que necesitas en cada momento.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Es ConciencIA confidencial?</h3>
+                <p class="faq-answer">
+                    Sí, absolutamente. Todo lo que compartas con ConciencIA queda entre tú y ella. Está diseñada para ser un espacio seguro donde puedas expresarte sin temor a ser juzgado o expuesto.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿En qué se diferencia de hablar con una persona?</h3>
+                <p class="faq-answer">
+                    ConciencIA ofrece una experiencia única: está disponible en cualquier momento, no te interrumpe ni te juzga, y su enfoque es siempre empático y reflexivo. Aunque no reemplaza la conexión humana, es un complemento ideal para quienes buscan un apoyo inmediato o una perspectiva externa sin complicaciones.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Quién puede beneficiarse de ConciencIA?</h3>
+                <p class="faq-answer">
+                    Cualquier persona que necesite un momento de pausa, quiera reflexionar sobre su vida, o busque apoyo emocional sin sentirse vulnerable. Es ideal para quienes valoran la introspección y desean cultivar una vida más consciente.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Necesito experiencia previa para usarla?</h3>
+                <p class="faq-answer">
+                    No, ConciencIA es intuitiva y fácil de usar. Solo necesitas una mente abierta y ganas de conectar. Hablar con ella es tan natural como charlar con un amigo cercano.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Es ConciencIA gratis?</h3>
+                <p class="faq-answer">
+                    Los usuarios registrados pueden disfrutar de 5 conversaciones gratuitas por día. Si deseas acceso ilimitado a los servicios de ConciencIA, ofrecemos un plan Plus por solo 5 euros al mes, que te permite interactuar sin restricciones.
+                </p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">¿Por qué cobramos por ConciencIA Plus?</h3>
+                <p class="faq-answer">
+                    Mantener ConciencIA operativa tiene un costo para nosotros, incluyendo servidores, desarrollo continuo y soporte técnico. Cobramos una tarifa mínima para asegurar que la plataforma siga siendo sostenible y pueda seguir brindando apoyo a quienes lo necesiten.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Fallback para asegurar visibilidad inicial del botón
+        const loginButton = document.querySelector('#loginButton');
+        if (loginButton) {
+            loginButton.style.opacity = '1';
+            loginButton.style.transform = 'scale(1)';
+        }
+
+        // Verificar si GSAP está cargado
+        if (typeof gsap === 'undefined') {
+            console.error('GSAP no está cargado');
+            return;
+        }
+
+        // Animaciones GSAP para el título y eslogan
+        const conscienciaTitle = document.querySelector('#conscienciaTitle');
+        const conscienciaSlogan = document.querySelector('#conscienciaSlogan');
+        if (conscienciaTitle && conscienciaSlogan) {
+            // Animación inicial del título
+            gsap.from(conscienciaTitle, { 
+                opacity: 0, 
+                y: -100, 
+                duration: 1.5, 
+                ease: "power4.out",
+                onComplete: () => {
+                    // Animación holográfica del título
+                    gsap.to(".title-text", {
+                        textShadow: "0 0 20px #FFD700, 0 0 30px #f26666, 0 0 40px #8A2BE2",
+                        duration: 2.5,
+                        ease: "power1.inOut",
+                        repeat: -1,
+                        yoyo: true
+                    });
+                    gsap.to(".ia-text", {
+                        textShadow: "0 0 20px #8A2BE2, 0 0 30px #f26666, 0 0 40px #FFD700",
+                        duration: 2.5,
+                        ease: "power1.inOut",
+                        repeat: -1,
+                        yoyo: true
+                    });
+                }
+            });
+
+            // Animación inicial del eslogan
+            gsap.from(conscienciaSlogan, { 
+                opacity: 0, 
+                y: 50, 
+                duration: 1.2, 
+                delay: 0.5, 
+                ease: "power2.out"
+            });
+
+            // Partículas alrededor del título
+            const particlesContainer = document.createElement('div');
+            particlesContainer.className = 'title-particles';
+            conscienciaTitle.appendChild(particlesContainer);
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'title-particle';
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                particle.style.width = `${Math.random() * 3 + 1}px`;
+                particle.style.height = particle.style.width;
+                particlesContainer.appendChild(particle);
+
+                gsap.to(particle, {
+                    x: Math.random() * 50 - 25,
+                    y: Math.random() * 50 - 25,
+                    opacity: Math.random() * 0.5 + 0.5,
+                    duration: 5 + Math.random() * 5,
+                    ease: "sine.inOut",
+                    repeat: -1,
+                    yoyo: true
+                });
+            }
+        }
+
+        // Animaciones GSAP existentes
+        gsap.from("#conscienciaIntro", { opacity: 0, y: 30, duration: 1.2, delay: 0.7, ease: "power2.out" });
+        gsap.from("#benefitsContainer", { opacity: 0, y: 30, duration: 1.2, delay: 1.0, ease: "power2.out" });
+        gsap.from(".benefits-list li", { opacity: 0, y: 20, duration: 0.8, delay: 1.2, stagger: 0.2, ease: "power2.out" });
+        gsap.from("#faqContainer h2", { opacity: 0, y: 30, duration: 1.2, delay: 1.8, ease: "power2.out" });
+        gsap.from(".faq-item", { opacity: 0, y: 20, duration: 0.8, delay: 2.1, stagger: 0.3, ease: "power2.out" });
+
+        // Animación del botón galáctico
+        if (loginButton) {
+            const particlesContainer = document.querySelector('.particles');
+            if (particlesContainer) {
+                for (let i = 0; i < 8; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = `${Math.random() * 100}%`;
+                    particle.style.top = `${Math.random() * 100}%`;
+                    particle.style.width = `${Math.random() * 3 + 2}px`;
+                    particle.style.height = particle.style.width;
+                    particlesContainer.appendChild(particle);
+
+                    gsap.to(particle, {
+                        x: Math.random() * 40 - 20,
+                        y: Math.random() * 40 - 20,
+                        opacity: 0.8,
+                        duration: 5 + Math.random() * 5,
+                        ease: "sine.inOut",
+                        repeat: -1,
+                        yoyo: true
+                    });
+                }
+            }
+
+            gsap.fromTo(loginButton, 
+                { scale: 0.95, opacity: 0 },
+                { 
+                    scale: 1, 
+                    opacity: 1, 
+                    duration: 1.5, 
+                    ease: "power4.out",
+                    delay: 0.4,
+                    onComplete: () => {
+                        gsap.to(loginButton, {
+                            scale: 1.02,
+                            duration: 2,
+                            ease: "sine.inOut",
+                            repeat: -1,
+                            yoyo: true
+                        });
+                        gsap.to(loginButton, {
+                            y: -5,
+                            duration: 3,
+                            ease: "sine.inOut",
+                            repeat: -1,
+                            yoyo: true
+                        });
+                    }
+                }
+            );
+
+            loginButton.addEventListener('mouseenter', () => {
+                gsap.to(loginButton, {
+                    scale: 1.05,
+                    filter: "brightness(1.3)",
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+                gsap.to(particlesContainer.children, {
+                    x: "+=15",
+                    y: "-=15",
+                    opacity: 1,
+                    duration: 0.5,
+                    stagger: 0.05,
+                    ease: "power2.out"
+                });
+            });
+
+            loginButton.addEventListener('mouseleave', () => {
+                gsap.to(loginButton, {
+                    scale: 1,
+                    filter: "brightness(1)",
+                    duration: 0.5,
+                    ease: "power2.out"
+                });
+                gsap.to(particlesContainer.children, {
+                    x: 0,
+                    y: 0,
+                    opacity: 0.8,
+                    duration: 0.5,
+                    stagger: 0.05,
+                    ease: "power2.out"
+                });
+            });
+        }
+    });
+</script>
+
+<style>
+    .consciencia-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f9f9f9;
+        padding: 60px 20px;
+    }
+
+    body.dark-mode .consciencia-section {
+        background: #1a1a1a;
+    }
+
+    .consciencia-content {
+        max-width: 900px;
+        text-align: center;
+        padding: 40px;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        position: relative;
+        padding-bottom: 60px;
+    }
+
+    body.dark-mode .consciencia-content {
+        background: rgba(26, 26, 26, 0.9);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-container {
+        margin-bottom: 40px;
+    }
+
+    .consciencia-title {
+        font-size: 72px;
+        font-family: 'Playfair Display', serif;
+        margin-bottom: 10px;
+        line-height: 1.2;
+        position: relative;
+        display: inline-block;
+        background: none; /* Aseguramos que no haya fondo */
+    }
+
+    .title-text {
+        color: #FFD700; /* Color inicial para "Conscienc" */
+        transition: color 2s ease;
+        animation: gradientShiftText 6s ease infinite;
+    }
+
+    body.dark-mode .title-text {
+        color: #8A2BE2; /* Color inicial en modo oscuro */
+    }
+
+    .ia-text {
+        color: #f26666; /* Color inicial para "IA" */
+        transition: color 2s ease;
+        animation: gradientShiftIA 6s ease infinite;
+    }
+
+    body.dark-mode .ia-text {
+        color: #FFD700; /* Color inicial en modo oscuro */
+    }
+
+    .consciencia-slogan {
+        font-size: 24px;
+        font-family: 'Poppins', sans-serif;
+        color: #666;
+        margin: 0;
+    }
+
+    body.dark-mode .consciencia-slogan {
+        color: #ccc;
+    }
+
+    /* Animación del gradiente para el texto "Conscienc" */
+    @keyframes gradientShiftText {
+        0% { color: #FFD700; }
+        33% { color: #f26666; }
+        66% { color: #8A2BE2; }
+        100% { color: #FFD700; }
+    }
+
+    /* Animación del gradiente para el texto "IA" */
+    @keyframes gradientShiftIA {
+        0% { color: #f26666; }
+        33% { color: #8A2BE2; }
+        66% { color: #FFD700; }
+        100% { color: #f26666; }
+    }
+
+    /* Partículas alrededor del título */
+    .title-particles {
+        position: absolute;
+        width: 200%;
+        height: 200%;
+        top: -50%;
+        left: -50%;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .title-particle {
+        position: absolute;
+        background: rgba(255, 215, 0, 0.8);
+        border-radius: 50%;
+    }
+
+    body.dark-mode .title-particle {
+        background: rgba(138, 43, 226, 0.8);
+    }
+
+    .consciencia-intro {
+        font-size: 20px;
+        font-family: 'Poppins', sans-serif;
+        color: #666;
+        line-height: 1.8;
+        margin-bottom: 50px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    body.dark-mode .consciencia-intro {
+        color: #ccc;
+    }
+
+    .benefits-container {
+        margin-bottom: 60px;
+        text-align: left;
+    }
+
+    .benefits-title {
+        font-size: 28px;
+        font-family: 'Playfair Display', serif;
+        color: #f26666;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .benefits-list li {
+        font-size: 18px;
+        font-family: 'Poppins', sans-serif;
+        color: #666;
+        margin-bottom: 25px;
+        line-height: 1.7;
+        padding-left: 20px;
+        position: relative;
+    }
+
+    body.dark-mode .benefits-list li {
+        color: #ccc;
+    }
+
+    .benefits-list li::before {
+        content: "•";
+        color: #ffca28;
+        position: absolute;
+        left: 0;
+    }
+
+    .benefits-list strong {
+        color: #ffca28;
+    }
+
+    .consciencia-button {
+        display: inline-block;
+        padding: 14px 35px;
+        background: #000;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 10px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 18px;
+        margin-top: 40px;
+        position: relative;
+        z-index: 2;
+        opacity: 1 !important;
+        will-change: transform, box-shadow, filter;
+        transform: translateZ(0);
+        -webkit-transform: translateZ(0);
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 0 40px rgba(255, 170, 0, 0.2);
+    }
+
+    .consciencia-button::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(
+            circle at 30% 70%,
+            rgba(75, 0, 130, 0.3) 0%,
+            rgba(0, 0, 0, 0.8) 50%,
+            rgba(0, 191, 255, 0.2) 100%
+        );
+        z-index: -1;
+        animation: nebulaFlow 10s ease-in-out infinite;
+        opacity: 0.6;
+    }
+
+    @keyframes nebulaFlow {
+        0% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+        50% { transform: scale(1.1) rotate(5deg); opacity: 0.8; }
+        100% { transform: scale(1) rotate(0deg); opacity: 0.6; }
+    }
+
+    .consciencia-button::after {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border-radius: 12px;
+        background: linear-gradient(
+            45deg,
+            rgba(255, 215, 0, 0.5),
+            rgba(255, 170, 0, 0.3),
+            rgba(255, 215, 0, 0.5)
+        );
+        z-index: -2;
+        filter: blur(15px);
+        animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    body.dark-mode .consciencia-button {
+        border: 2px solid rgba(147, 112, 219, 0.5);
+        box-shadow: 0 0 20px rgba(147, 112, 219, 0.4), 0 0 40px rgba(138, 43, 226, 0.3);
+    }
+
+    body.dark-mode .consciencia-button::after {
+        background: linear-gradient(
+            45deg,
+            rgba(147, 112, 219, 0.5),
+            rgba(138, 43, 226, 0.3),
+            rgba(147, 112, 219, 0.5)
+        );
+    }
+
+    @keyframes glowPulse {
+        0% { opacity: 0.4; filter: blur(15px); }
+        50% { opacity: 0.8; filter: blur(20px); }
+        100% { opacity: 0.4; filter: blur(15px); }
+    }
+
+    .consciencia-button .particles {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .particle {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 50%;
+        animation: orbit 8s infinite linear;
+    }
+
+    .particle:nth-child(odd) {
+        background: rgba(135, 206, 235, 0.7);
+        animation-duration: 6s;
+    }
+
+    body.dark-mode .particle:nth-child(odd) {
+        background: rgba(147, 112, 219, 0.7);
+    }
+
+    @keyframes orbit {
+        0% { transform: translate(0, 0) scale(0.5); opacity: 0.6; }
+        50% { transform: translate(30px, -30px) scale(1); opacity: 1; }
+        100% { transform: translate(0, 0) scale(0.5); opacity: 0.6; }
+    }
+
+    .consciencia-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 0 60px rgba(255, 170, 0, 0.4);
+        filter: brightness(1.2);
+    }
+
+    body.dark-mode .consciencia-button:hover {
+        box-shadow: 0 0 30px rgba(147, 112, 219, 0.7), 0 0 60px rgba(138, 43, 226, 0.5);
+    }
+
+    .faq-container {
+        margin-top: 80px;
+        text-align: left;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .faq-title {
+        font-size: 28px;
+        font-family: 'Playfair Display', serif;
+        color: #f26666;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .faq-item {
+        margin-bottom: 40px;
+    }
+
+    .faq-question {
+        font-size: 20px;
+        font-family: 'Poppins', sans-serif;
+        color: #333;
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+    body.dark-mode .faq-question {
+        color: #fff;
+    }
+
+    .faq-answer {
+        font-size: 16px;
+        font-family: 'Poppins', sans-serif;
+        color: #666;
+        line-height: 1.8;
+    }
+
+    body.dark-mode .faq-answer {
+        color: #ccc;
+    }
+
+    @media (max-width: 768px) {
+        .consciencia-section {
+            padding: 40px 15px;
+        }
+        .consciencia-content {
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        .consciencia-title {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .consciencia-slogan {
+            font-size: 20px;
+        }
+        .consciencia-intro {
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        .benefits-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .benefits-list li {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .faq-title {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        .faq-question {
+            font-size: 18px;
+        }
+        .faq-answer {
+            font-size: 14px;
+        }
+        .consciencia-button {
+            font-size: 16px;
+            padding: 10px 25px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            display: block;
+        }
+        .consciencia-button::before {
+            animation-duration: 8s;
+        }
+        .consciencia-button::after {
+            filter: blur(10px);
+        }
+        .particle {
+            animation-duration: 6s;
+        }
+        .title-particle {
+            animation-duration: 5s;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .consciencia-content {
+            padding-bottom: 100px;
+        }
+        .consciencia-title {
+            font-size: 36px;
+        }
+        .consciencia-slogan {
+            font-size: 18px;
+        }
+        .consciencia-button {
+            font-size: 14px;
+            padding: 8px 20px;
+            margin-bottom: 30px;
+        }
+        .particle {
+            animation-duration: 5s;
+        }
+        .title-particle {
+            animation-duration: 4s;
+        }
+    }
+</style>
+{% endblock %}

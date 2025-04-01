@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% block title %}Voy Consciente{% endblock %}
+{% block content %}
+    <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-subtitle" data-aos="fade-down" data-aos-delay="200" data-aos-offset="0" data-aos-duration="500">Voy consciente, porque solo al ser consciente puedo transformarme.</p>
+            <div class="portal-container">
+                <a href="{{ url_for('articulo_aleatorio') }}" class="portal-button" id="portalButton">Mensaje del Día</a>
+                <a href="{{ url_for('consciencia_info') }}" class="consciencia-button" id="conscienciaButton">Concienc<span class="multicolor">IA</span></a>
+                <div class="portal-effect" id="portalEffect">
+                    <canvas id="threeCanvas"></canvas>
+                </div>            
+            </div>
+        </section>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                // Elementos del DOM
+                const portalButton = document.getElementById('portalButton');
+                const portalEffect = document.getElementById('portalEffect');
+                const threeCanvas = document.getElementById('threeCanvas');
+                const portalSound = document.getElementById('portalSound');
+                const conscienciaButton = document.getElementById('conscienciaButton');
+
+                // Verificar si GSAP y Three.js están disponibles
+                if (typeof gsap === 'undefined') {
+                    console.error('GSAP no está cargado');
+                    return;
+                }
+                if (typeof THREE === 'undefined') {
+                    console.error('Three.js no está cargado');
+                    return;
+                }
+
+                // Animación para "Mensaje del Día": Flotación suave con brillo
+                gsap.fromTo(portalButton, { 
+                    y: 0, 
+                    boxShadow: '0 5px 15px rgba(242, 102, 102, 0.4)'
+                }, { 
+                    y: -10, 
+                    boxShadow: '0 10px 25px rgba(242, 102, 102, 0.6)',
+                    duration: 1.5, 
+                    ease: 'power1.inOut', 
+                    repeat: -1, 
+                    yoyo: true
+                });
+
+                // Animación inicial espectacular para "ConsciencIA"
+                gsap.fromTo(conscienciaButton, {
+                    opacity: 0,
+                    scale: 0,
+                    y: 50, // Entra desde abajo
+                    rotation: 360, // Rotación completa
+                    boxShadow: '0 0 0 rgba(255, 255, 255, 0)'
+                }, {
+                    opacity: 1,
+                    scale: 1,
+                    y: 0,
+                    rotation: 0,
+                    boxShadow: '0 0 50px rgba(255, 255, 255, 0.8)', // Destello inicial de luz
+                    duration: 1.5,
+                    ease: 'power4.out',
+                    delay: 0.8, // Retraso para que aparezca después del subtítulo
+                    onComplete: () => {
+                        // Efecto de "explosión de luz" al llegar
+                        gsap.to(conscienciaButton, {
+                            boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)', // Reduce el destello
+                            duration: 0.5,
+                            ease: 'power2.in',
+                            onComplete: () => {
+                                // Inicia la animación de flotación suave (igual que "Mensaje del Día")
+                                gsap.fromTo(conscienciaButton, { 
+                                    y: 0, 
+                                    boxShadow: '0 5px 15px rgba(0, 0, 0, 0.4)' // Sombra adaptada al fondo negro
+                                }, { 
+                                    y: -10, 
+                                    boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
+                                    duration: 1.5, 
+                                    ease: 'power1.inOut', 
+                                    repeat: -1, 
+                                    yoyo: true
+                                });
+                            }
+                        });
+                    }
+                });
+
+                // Configuración de Three.js (partículas como fotones/bolitas de luz holográficas)
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer({ canvas: threeCanvas, alpha: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+
+                // Ajustar cámara para toda la pantalla
+                camera.position.z = 30;
+                threeCanvas.style.position = 'fixed';
+                threeCanvas.style.top = '0';
+                threeCanvas.style.left = '0';
+                threeCanvas.style.width = '100%';
+                threeCanvas.style.height = '100%';
+                threeCanvas.style.zIndex = '1';
+
+                // Partículas como fotones/bolitas de luz
+                const particlesGeometry = new THREE.BufferGeometry();
+                const particlesCount = 4000;
+                const posArray = new Float32Array(particlesCount * 3);
+                const sizesArray = new Float32Array(particlesCount);
+                const velocities = new Float32Array(particlesCount * 3);
+                for (let i = 0; i < particlesCount * 3; i += 3) {
+                    posArray[i] = (Math.random() - 0.5) * window.innerWidth / 5;
+                    posArray[i + 1] = (Math.random() - 0.5) * window.innerHeight / 5 - 20;
+                    posArray[i + 2] = (Math.random() - 0.5) * 30;
+                    velocities[i] = (Math.random() - 0.5) * 0.03;
+                    velocities[i + 1] = Math.random() * 0.02 + 0.005;
+                    velocities[i + 2] = (Math.random() - 0.5) * 0.01;
+                    sizesArray[i / 3] = Math.random() * 0.15 + 0.05; // Muy pequeñas (0.05 a 0.2)
+                }
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizesArray, 1));
+
+                const particlesMaterial = new THREE.PointsMaterial({
+                    color: 0xADD8E6, // Azul claro holográfico
+                    size: 0.2, // Tamaño base ajustado por sizesArray
+                    transparent: true,
+                    opacity: 0.8,
+                    blending: THREE.AdditiveBlending, // Efecto de resplandor
+                    sizeAttenuation: true
+                });
+                const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+                scene.add(particles);
+
+                // Luz ambiental para resaltar el efecto holográfico
+                const ambientLight = new THREE.AmbientLight(0xADD8E6, 0.5);
+                scene.add(ambientLight);
+                const pointLight = new THREE.PointLight(0xADD8E6, 1, 100);
+                pointLight.position.set(0, 0, 30);
+                scene.add(pointLight);
+
+                // Mostrar partículas inmediatamente al cargar
+                let isActive = true; // Activar partículas desde el inicio
+                portalEffect.style.display = 'block'; // Mostrar el contenedor de partículas
+                threeCanvas.style.opacity = '0.8'; // Hacer visibles las partículas
+
+                // Animación de las partículas
+                function animate() {
+                    requestAnimationFrame(animate);
+                    const positions = particlesGeometry.attributes.position.array;
+                    for (let i = 0; i < particlesCount * 3; i += 3) {
+                        positions[i] += velocities[i];
+                        positions[i + 1] += velocities[i + 1];
+                        positions[i + 2] += velocities[i + 2];
+
+                        if (positions[i + 1] > window.innerHeight / 5) {
+                            positions[i] = (Math.random() - 0.5) * window.innerWidth / 5;
+                            positions[i + 1] = -window.innerHeight / 5;
+                            positions[i + 2] = (Math.random() - 0.5) * 30;
+                        }
+                    }
+                    particlesGeometry.attributes.position.needsUpdate = true;
+
+                    // Efecto holográfico: leve pulsación de opacidad
+                    if (isActive) {
+                        particlesMaterial.opacity = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+                    }
+
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                // Ajustar tamaño del lienzo al redimensionar la ventana
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                // Evento clic para "Mensaje del Día"
+                portalButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (portalSound) {
+                        portalSound.currentTime = 0;
+                        if (document.hasFocus()) {
+                            portalSound.play().catch(error => {
+                                console.error('Error al reproducir el sonido:', error);
+                            });
+                        } else {
+                            console.warn('El navegador puede bloquear el audio sin interacción previa.');
+                        }
+                    }
+                    setTimeout(() => {
+                        window.location.href = "{{ url_for('articulo_aleatorio') }}";
+                    }, 500);
+                });
+
+                // Evento clic para "ConsciencIA"
+                conscienciaButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    window.location.href = "{{ url_for('mostrar_consciencia') }}";
+                });
+            });
+        </script>
+
+        <style>
+            /* Estilos específicos para index.html compatibles con CSS global */
+            
+            /* Anular padding-top del body solo para index.html */
+         body {
+        padding-top: 0 !important;
+            }
+
+            .hero {
+                position: relative;
+                width: 100%;
+                height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                overflow: hidden;
+            }
+
+            .hero-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: url('/static/img/naturaleza.jpg') no-repeat center center/cover;
+                opacity: 0.8;
+                z-index: 0;
+                transition: filter 0.5s ease, opacity 0.5s ease, background 0.5s ease;
+            }
+
+            .hero-content {
+                position: relative;
+                z-index: 5;
+                text-align: center;
+                padding: 0 20px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+                top: 50%; /* Ajuste para subir el contenido */
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .hero-subtitle {
+                font-size: 48px;
+                font-weight: 700;
+                max-width: 900px;
+                margin: 0 auto 40px; /* Reducido para mejor espaciado */
+                color: #fff;
+                text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.8);
+                -webkit-text-stroke: 0.5px #333;
+            }
+
+            .portal-container {
+                position: relative;
+                z-index: 5;
+                display: flex;
+                justify-content: center;
+                gap: 30px; /* Espaciado uniforme entre botones */
+                margin-top: 20px;
+            }
+
+            .portal-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(90deg, #f26666, #ff8c8c); /* Gradiente suave */
+                color: #fff;
+                padding: 12px 25px;
+                font-size: 16px;
+                font-weight: 600;
+                font-family: 'Playfair Display', serif; /* Tipografía más elegante */
+                border-radius: 25px;
+                text-decoration: none;
+                box-shadow: 0 4px 12px rgba(242, 102, 102, 0.3);
+                transition: all 0.3s ease;
+                cursor: pointer;
+                border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil */
+                backdrop-filter: blur(5px); /* Efecto de vidrio esmerilado */
+            }
+
+            .portal-button:hover {
+                background: linear-gradient(90deg, #ff8c8c, #f26666);
+                transform: translateY(-2px);
+                box-shadow: 0 6px 18px rgba(242, 102, 102, 0.5);
+            }
+
+            .portal-effect {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: block; /* Cambiado a block para que las partículas sean visibles */
+                z-index: 1;
+                overflow: hidden;
+                pointer-events: none;
+            }
+
+            #threeCanvas {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                opacity: 0.8; /* Ajustado para que las partículas sean visibles */
+                transition: opacity 0.5s ease;
+            }
+
+            .consciencia-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(90deg, #1a1a1a, #000000); /* Degradado negro */
+                color: #fff;
+                padding: 14px 30px;
+                font-size: 18px;
+                font-weight: 700;
+                font-family: 'Playfair Display', serif; /* Tipografía elegante */
+                border-radius: 30px;
+                text-decoration: none;
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); /* Ajustado para el fondo negro */
+                transition: all 0.3s ease;
+                cursor: pointer;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(5px);
+                position: static; /* Quitar posicionamiento absoluto */
+                transform: none; /* Quitar transform para alineación natural */
+            }
+
+            .consciencia-button:hover {
+                background: linear-gradient(90deg, #000000, #1a1a1a); /* Degradado negro invertido */
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6); /* Ajustado para el fondo negro */
+            }
+
+            .multicolor {
+                background: linear-gradient(45deg, #ff4500, #ff8000, #ffd700);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                display: inline;
+                font-weight: 900;
+            }
+
+            /* Ajuste para modo oscuro */
+            body.dark-mode .portal-button {
+                background: linear-gradient(90deg, #f26666, #ff8c8c);
+                box-shadow: 0 4px 12px rgba(242, 102, 102, 0.6);
+            }
+
+            body.dark-mode .portal-button:hover {
+                background: linear-gradient(90deg, #ff8c8c, #f26666);
+                box-shadow: 0 6px 18px rgba(242, 102, 102, 0.8);
+            }
+
+            body.dark-mode .consciencia-button {
+                background: linear-gradient(90deg, #1a1a1a, #000000); /* Degradado negro */
+                box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            }
+
+            body.dark-mode .consciencia-button:hover {
+                background: linear-gradient(90deg, #000000, #1a1a1a);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8);
+            }
+
+            body.dark-mode .hero-overlay {
+                filter: brightness(0.6) contrast(1.2);
+            }
+
+            /* Ajustes responsivos */
+            @media (max-width: 768px) {
+                .hero-subtitle {
+                    font-size: 32px;
+                    margin-bottom: 30px;
+                }
+                .portal-container {
+                    flex-direction: column;
+                    gap: 20px;
+                }
+                .portal-button, .consciencia-button {
+                    width: 80%;
+                    max-width: 300px;
+                    margin: 0 auto;
+                }
+            }
+        </style>
+{% endblock %}

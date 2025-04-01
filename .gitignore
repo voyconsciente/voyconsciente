@@ -1,0 +1,29 @@
+# Entorno virtual
+venv/
+test_env/
+
+# Archivos de base de datos
+basededatos.db
+
+# Archivos de configuración sensibles
+.env
+cert.pem
+key.pem
+voy-consciente-analytics.json
+
+# Archivos temporales de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Archivos de migraciones (opcional, si prefieres regenerarlas)
+migrations/
+
+# Archivos de caché y logs
+*.log
+*.cache

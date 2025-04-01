@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ reflexion.titulo }} - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="reflexiones"style="padding-top: 20px; margin-top: 0;">
+        <h1 class="section-title" style="font-family: 'Inter', sans-serif; font-size: 20px; margin-bottom: 20px;" data-aos="fade-down">{{ reflexion.titulo }}</h1>
+        <div class="reflexiones-blog">
+            <article class="blog-post" data-aos="fade-up">
+                {% if reflexion.imagen and reflexion.imagen not in reflexion.contenido %}
+                    <img src="{{ reflexion.imagen }}" alt="{{ reflexion.titulo }}" class="blog-cover">
+                {% endif %}
+                <div class="blog-content">
+                    <p class="categoria">{{ reflexion.categoria | capitalize }}</p>
+                    <div class="blog-text">
+                        {{ reflexion.contenido | safe }}
+                    </div>
+                    <div class="favorite-button-container">
+                        {% if current_user.is_authenticated %}
+                            <form method="POST" action="{{ url_for('toggle_favorite', reflexion_id=reflexion.id) }}" style="display: inline;">
+                                <button type="submit" class="btn">
+                                    {% if reflexion in current_user.favorite_reflexiones %}
+                                        Quitar de Favoritos
+                                    {% else %}
+                                        Añadir a Favoritos
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% endif %}
+                        {% if current_user.is_authenticated and current_user.is_admin %}
+                            <a href="{{ url_for('download_pdf', reflexion_id=reflexion.id) }}" class="btn download-btn">Descargar PDF</a>
+                        {% endif %}
+                    </div>
+                    <!-- Sección de Comentarios Disqus -->
+                    <div id="disqus_thread" style="margin-top: 40px;"></div>
+                    <script>
+                        (function() {
+                            var d = document, s = d.createElement('script');
+                            s.src = 'https://voy-consciente.disqus.com/embed.js';
+                            s.setAttribute('data-timestamp', +new Date());
+                            (d.head || d.body).appendChild(s);
+                        })();
+                    </script>
+                    <noscript>Por favor, habilita JavaScript para ver los <a href="https://disqus.com/?ref_noscript">comentarios powered by Disqus.</a></noscript>
+                </div>
+            </article>
+        </div>
+    </section>
+{% endblock %}

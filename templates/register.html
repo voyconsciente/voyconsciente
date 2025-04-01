@@ -1,0 +1,406 @@
+{% extends 'base.html' %}
+{% block title %}Registro - Voy Consciente{% endblock %}
+{% block content %}
+    <section class="contacto register-section" data-aos="fade-up" data-aos-duration="1000">
+        <div class="contacto-form-container" data-aos="zoom-in" data-aos-delay="200" data-aos-duration="1000">
+            <h1 class="section-title" data-aos="fade-down" data-aos-delay="300">Registro</h1>
+            <p class="intro" data-aos="fade-up" data-aos-delay="400">Únete a nosotros y comienza tu viaje de consciencia.</p>
+            <form method="POST" class="contacto-form" id="registerForm" data-aos="fade-up" data-aos-delay="500">
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="form-group">
+                    <input type="text" name="name" placeholder="Tu nombre" value="{{ name | default('') }}" required class="form-input">
+                    <span class="focus-border"></span>
+                </div>
+                <div class="form-group">
+                    <input type="email" name="email" placeholder="Tu correo" value="{{ email | default('') }}" required class="form-input">
+                    <span class="focus-border"></span>
+                </div>
+                <div class="form-group date-wrapper">
+                    <input type="text" name="birth_date" id="birth_date" placeholder="Fecha de nacimiento" value="{{ birth_date | default('') }}" required class="form-input" pattern="\d{2}/\d{2}/\d{4}" title="Formato: DD/MM/AAAA">
+                    <label for="birth_date" class="visually-hidden">Fecha de nacimiento</label>
+                    <span class="focus-border"></span>
+                </div>
+                <div class="form-group">
+                    <input type="tel" name="phone" placeholder="Teléfono (opcional)" value="{{ phone | default('') }}" class="form-input">
+                    <span class="focus-border"></span>
+                </div>
+                <div class="form-group">
+                    <div class="password-wrapper">
+                        <input type="password" name="password" id="register-password" placeholder="Tu contraseña" value="{{ password | default('') }}" required class="form-input register-password-input">
+                        <button type="button" class="toggle-password register-toggle-password" onclick="togglePassword('register-password')" data-aos="fade-left" data-aos-delay="600">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <span class="focus-border"></span>
+                    </div>
+                    <p class="password-requirements">La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.</p>
+                </div>
+                <div class="form-group">
+                    <div class="password-wrapper">
+                        <input type="password" name="confirm_password" id="confirm-password" placeholder="Repite tu contraseña" value="{{ confirm_password | default('') }}" required class="form-input register-password-input">
+                        <button type="button" class="toggle-password register-toggle-password" onclick="togglePassword('confirm-password')" data-aos="fade-left" data-aos-delay="700">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <span class="focus-border"></span>
+                    </div>
+                    <span id="password-match-error" class="error-message"></span>
+                </div>
+                <p style="font-size: 0.9em; color: #837e7e; margin: 10px 0; text-align: center;" data-aos="fade-up" data-aos-delay="800">
+                    Al registrarte, recibirás nuestras reflexiones semanales por correo.
+                </p>
+                <button type="submit" class="btn" data-aos="zoom-in" data-aos-delay="900">Registrarse</button>
+                <div class="form-links" data-aos="fade-up" data-aos-delay="1000">
+                    <p>¿Ya tienes cuenta? <a href="{{ url_for('login', next=next) }}" class="link-hover">Inicia sesión aquí</a></p>
+                    <p><a href="{{ url_for('forgot_password') }}" class="link-hover">¿Olvidaste tu contraseña?</a></p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Incluir Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+        function togglePassword(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const toggleBtn = passwordField.nextElementSibling;
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                toggleBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                passwordField.type = "password";
+                toggleBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        }
+
+        const passwordField = document.getElementById('register-password');
+        const confirmPasswordField = document.getElementById('confirm-password');
+        const passwordMatchError = document.getElementById('password-match-error');
+        const registerForm = document.getElementById('registerForm');
+        const birthDateInput = document.getElementById('birth_date');
+
+        function checkPasswordMatch() {
+            if (passwordField.value !== confirmPasswordField.value) {
+                passwordMatchError.style.display = 'block';
+                passwordMatchError.textContent = 'Las contraseñas no coinciden';
+                confirmPasswordField.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                passwordMatchError.style.display = 'none';
+                passwordMatchError.textContent = '';
+                confirmPasswordField.setCustomValidity('');
+            }
+        }
+
+        flatpickr("#birth_date", {
+            dateFormat: "d/m/Y",
+            placeholder: "Fecha de nacimiento",
+            maxDate: "today",
+            disableMobile: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                if (selectedDates.length > 0) {
+                    birthDateInput.setCustomValidity('');
+                }
+            }
+        });
+
+        birthDateInput.addEventListener('input', function() {
+            const datePattern = /^\d{2}\/\d{2}\/\d{4}$/;
+            if (!datePattern.test(birthDateInput.value) && birthDateInput.value !== '') {
+                birthDateInput.setCustomValidity('Por favor, ingresa la fecha en formato DD/MM/AAAA');
+            } else {
+                birthDateInput.setCustomValidity('');
+            }
+        });
+
+        registerForm.addEventListener('submit', function(event) {
+            if (passwordField.value !== confirmPasswordField.value) {
+                event.preventDefault();
+                passwordMatchError.style.display = 'block';
+                passwordMatchError.textContent = 'Las contraseñas no coinciden';
+                confirmPasswordField.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                confirmPasswordField.setCustomValidity('');
+            }
+        });
+
+        passwordField.addEventListener('input', checkPasswordMatch);
+        confirmPasswordField.addEventListener('input', checkPasswordMatch);
+    </script>
+
+    <style>
+        .register-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f1e9 0%, #fff9e6 100%);
+            padding: 50px 0;
+        }
+
+        .contacto-form-container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            animation: slideUp 0.5s ease-out;
+            margin: 0 auto 50px auto;
+        }
+
+        .section-title {
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            background: #f8f1e9;
+            outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+            height: 40px;
+            line-height: normal;
+        }
+
+        .form-input:focus {
+            border-color: #ffca28;
+            box-shadow: 0 0 8px rgba(255, 202, 40, 0.3);
+        }
+
+        .focus-border {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: #ffca28;
+            transition: 0.3s;
+        }
+
+        .form-input:focus ~ .focus-border,
+        .form-input:valid ~ .focus-border {
+            width: 100%;
+            left: 0;
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+
+        .date-wrapper .date-placeholder {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 16px;
+            font-family: inherit;
+            pointer-events: none;
+            user-select: none;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .date-wrapper .date-placeholder {
+                font-size: 14px;
+                left: 12px;
+            }
+
+            .form-input {
+                font-size: 14px;
+                padding: 8px 35px 8px 12px;
+                height: 38px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .date-wrapper .date-placeholder {
+                font-size: 13px;
+                left: 10px;
+            }
+
+            .form-input {
+                font-size: 13px;
+                padding: 6px 30px 6px 10px;
+                height: 36px;
+            }
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px auto 15px;
+            display: block;
+        }
+
+        .form-links {
+            margin-top: 10px;
+        }
+
+        .link-hover {
+            color: #f26666;
+            text-decoration: none;
+            transition: color 0.3s ease, background 0.3s ease;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .link-hover:hover {
+            color: #ffca28;
+            background: rgba(242, 102, 102, 0.1);
+        }
+
+        .error-message {
+            color: #e63946;
+            font-size: 0.9em;
+            margin-top: 5px;
+            display: none;
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            z-index: 1;
+            animation: shake 0.5s;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+
+        .password-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .register-password-input {
+            padding-right: 40px;
+            height: 40px;
+            line-height: normal;
+            box-sizing: border-box;
+        }
+
+        .register-toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            margin: 0;
+            font-size: 16px !important;
+            z-index: 2;
+        }
+
+        .register-toggle-password i {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .register-toggle-password:hover {
+            color: #ffca28;
+        }
+
+        .password-requirements {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+            margin-bottom: 0;
+            text-align: center;
+            display: block;
+            position: static;
+            z-index: 1;
+        }
+
+        body.dark-mode .register-section {
+            background: linear-gradient(135deg, #000000 0%, #000000 100%);
+        }
+
+        body.dark-mode .contacto-form-container {
+            background: #3a3a3a;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode .form-input {
+            background: #3a3a3a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .form-input::placeholder {
+            color: #cccccc;
+        }
+
+        body.dark-mode .form-input:focus {
+            border-color: #ffca28;
+            box-shadow: 0 0 8px rgba(255, 202, 40, 0.3);
+        }
+
+        body.dark-mode .date-wrapper .date-placeholder {
+            color: #cccccc;
+        }
+
+        body.dark-mode .register-toggle-password {
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .register-toggle-password:hover {
+            color: #ffca28;
+        }
+
+        body.dark-mode .link-hover {
+            color: #f26666;
+        }
+
+        body.dark-mode .link-hover:hover {
+            color: #ffca28;
+            background: rgba(255, 202, 40, 0.1);
+        }
+
+        body.dark-mode .error-message {
+            color: #ff6b6b;
+        }
+
+        body.dark-mode .password-requirements {
+            color: #cccccc;
+        }
+    </style>
+{% endblock %}
